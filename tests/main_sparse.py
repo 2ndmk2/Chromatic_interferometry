@@ -6,7 +6,8 @@ rootdir = Path().resolve()
 #rootdir = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../source')))
 
-
+import matplotlib as mpl
+mpl.use('Agg')
 
 import numpy as np
 import matplotlib.pyplot as plt
