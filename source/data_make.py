@@ -5,35 +5,7 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import os
-from logging import basicConfig, getLogger, StreamHandler, FileHandler, Formatter
 
-
-
-def get_logger(logger_name, log_file, s_fmt='%(message)s', f_fmt='%(message)s'):
-    """Get log"""
-    # Make log
-    basicConfig(level = "DEBUG")
-    logger = getLogger(logger_name)
-
-    # Make Streaming handler
-    stream_handler = StreamHandler()
-    stream_handler.setLevel("DEBUG")
-    stream_handler.setFormatter(Formatter(s_fmt))
-
-
-    # add streaming handler to loger 
-    logger.addHandler(stream_handler)
-
-
-    # make file handler 
-    file_handler = FileHandler(log_file, mode='a', encoding='utf-8')
-    file_handler.setLevel("DEBUG")
-    file_handler.setFormatter(Formatter(f_fmt))
-
-    # add file handler to logger
-    logger.addHandler(file_handler)
-
-    return logger
 
 
 def make_dir(dirName):
@@ -216,7 +188,7 @@ class observatory:
                 
 
 
-
+"""
 def obs_make(images, obs_num, width, sn=10):
     fft_now = np.fft.fft2(images)
     fft_now = np.fft.fftshift(fft_now)
@@ -235,3 +207,4 @@ def obs_make(images, obs_num, width, sn=10):
     return np.fft.ifftshift(vis)
 
 import numpy as np
+"""

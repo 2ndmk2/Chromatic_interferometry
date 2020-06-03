@@ -1,0 +1,5 @@
+2020-06-03 14:23:54,984 - INFO - <module>- Main part starts
+2020-06-03 14:24:05,701 - INFO - only_fx_mfista- end; fitting. iternum:300, relative dif of F: 1.790059e-09
+2020-06-03 14:24:22,213 - INFO - only_fx_mfista- end; fitting. iternum:409, relative dif of F: 9.905673e-08
+2020-06-03 14:24:57,147 - ERROR - fx_L1_mfista- Too large L!! Change l1 or l2 values!!
+2020-06-03 14:24:57,147 - INFO - fx_L1_mfista- end fitting: itercount: 1

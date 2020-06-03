@@ -1,4 +1,10 @@
-
+#import logging
+## for file logging
+"""
+logging.basicConfig("test", filename='test.log',
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s %(threadName)-10s %(message)s',)
+"""
 import os
 import sys
 from pathlib import Path
@@ -6,14 +12,20 @@ rootdir = Path().resolve()
 #rootdir = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../source')))
 
+import data_make 
+
 import matplotlib as mpl
 mpl.use('Agg')
 
 import numpy as np
 import matplotlib.pyplot as plt
-import data_make 
 import solver 
 import plot_make 
+import log
+import logging
+#from log import *
+logger = logging.getLogger(__name__)
+
 
 
 def main():
@@ -78,20 +90,20 @@ def main():
 
 	## Setting priors for model
 	model_prior = np.abs(dirty_image)
-	l2_lambda = 1e2
+	l2_lambda = 1e2 
 	images = model_prior
 	stop_ratio = 1e-7
 
-	model_map0 = solver.only_fx_mfista(images, solver.loss_function_arr_l2, solver.grad_loss_l2, solver.zero_func, 1.1, 1e-4, 1000, True, stop_ratio, vis_obs, model_prior, l2_lambda)
+	model_map0 = solver.only_fx_mfista(images, solver.loss_function_arr_l2, solver.grad_loss_l2, solver.zero_func, 1.1, 1e-4, 1000, 300, True, stop_ratio, vis_obs, model_prior, l2_lambda)
 	#model_map1 = only_fx_mfista(images, loss_function_arr_l2, grad_loss_l2, zero_func, 1.01, 1e-4, 500, True, vis_obs, model_prior, l2_lambda)
-	model_map2 = solver.only_fx_mfista(images, solver.loss_function_arr_TSV, solver.grad_loss_tsv, solver.zero_func, 1.1, 1e-4, 1000, True, stop_ratio, vis_obs, model_prior, l2_lambda)
+	model_map2 = solver.only_fx_mfista(images, solver.loss_function_arr_TSV, solver.grad_loss_tsv, solver.zero_func, 1.1, 1e-4, 1000, 300, True, stop_ratio, vis_obs, model_prior, l2_lambda)
 	#model_map0 = model_map2
 	model_map1 = model_map2
 	##
 
 	l2_lambda = 10**4
 	l1_lambda = 10**5
-	model_map3 = solver.fx_L1_mfista(images, solver.loss_function_arr_TSV, solver.grad_loss_tsv, solver.L1_norm, 1.05, 1e-4, 1000,True,stop_ratio,  vis_obs, l1_lambda, l2_lambda)
+	model_map3 = solver.fx_L1_mfista(images, solver.loss_function_arr_TSV, solver.grad_loss_tsv, solver.L1_norm, 1.05, 1e-4, 1000,300, False,stop_ratio,  vis_obs, l1_lambda, l2_lambda)
 	print(len(model_map2[model_map2==0]), len(model_map3[model_map3==0]))
 
 
@@ -101,5 +113,5 @@ def main():
 
 
 if __name__ == "__main__":
-	logger = data_make.get_logger("test", "test.log")
+	logger.info("Main part starts")
 	main()
