@@ -1,14 +1,21 @@
 import numpy as np
-import matplotlib as mpl
-mpl.use('Agg')
+
 import matplotlib.pyplot as plt
 import logging 
+import os 
+import sys
 
 logger = logging.getLogger(__name__)
 
-__MAX_L = 1e15
-_ETA_MIN= 1.02
-FIG_FOLDER = "../fig/"
+from pathlib import Path
+rootdir = Path().resolve()
+sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../tests')))
+from setting import *
+
+import matplotlib as mpl
+if not LOCAL_FLAG:
+    mpl.use('Agg')
+
 
 ## Calculation of TSV
 def TSV(mat):
@@ -290,16 +297,22 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
         L = L/eta
 
         while(1):
+
             logger.debug("itercount: %d, L: %e, eta:%e" % (itercount, L, eta))
-            if L > __MAX_L:
-                if _ETA_MIN < eta:
+            if L > MAX_L:
+                if ETA_MIN < eta:
                     L = L_init
                     eta = eta**0.5
+                    iterncount = 0
+                    x_k = init_model
+                    y_k = init_model
+                    x_prev = init_model
+                    
                     continue
                 else:
                     logger.error("Too large L!! Change l1 or l2 values!!")
                     logger.info("end fitting: itercount: %d" % itercount)
-                    return y_k
+                    return y_k, SOLVED_FLAG_ER 
                 #raise ValueError("fitting error!")
             if mask_positive:
                 z_temp = positive_soft_threshold(y_k -(1/L) *f_grad_yk,lambda_l1 *(1/L)) 
@@ -340,7 +353,7 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
         if itercount%50==0:
 
             chi, l2 =loss_f_arr(x_k, *args)
-            logger.debug("iternum:",itercount, ", L:", L, "F_xk:", np.log10(F_xk), "chi:", chi, "reg:", l2, "l1:", L1_norm(x_k, *args))
+            logger.debug("iternum:%d, L: %e, F_xk: %e, chi:%e, reg: %e, rela_err:%e"  % (itercount, L, np.log10(F_xk), chi, l2, np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])))
             line, = ax.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
             plt.pause(0.01)
             line.remove()
@@ -354,7 +367,7 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
     relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
     logger.info("end; fitting. iternum:%d, relative dif of F: %e" % (itercount, relative_dif))
 
-    return y_k
+    return y_k, SOLVED_FLAG_DONE
 
 
 
@@ -362,7 +375,7 @@ def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, 
 
     (obs, model_prior, lambda_l2) = args
     tk = 1
-    x_k=init_model
+    x_k = init_model
     y_k = init_model
     x_prev = init_model
     L=L_init
@@ -384,15 +397,19 @@ def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, 
 
         while(1):
             logger.debug("itercount: %d, L: %e, eta:%e" % (itercount, L, eta))
-            if L > __MAX_L:
-                if _ETA_MIN < eta:
+            if L > MAX_L:
+                if ETA_MIN < eta:
                     L = L_init
                     eta = eta**0.5
+                    iterncount = 0
+                    x_k = init_model
+                    y_k = init_model
+                    x_prev = init_model
                     continue
                 else:
                     logger.error("Too large L!! Change l1 or l2 values!!")
                     logger.info("end fitting: itercount: %d" % itercount)
-                    return y_k
+                    return y_k, SOLVED_FLAG_ER 
 
 
             z_temp = y_k -(1/L) *f_grad_yk
@@ -409,10 +426,10 @@ def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, 
         z_k = y_k -(1/L) *f_grad_yk
         if mask_positive:
             z_k[z_k<0] = 0        
-        tk_1 = (1 + np.sqrt(1+4*tk**2))/2
-        F_xk = loss_f(x_k, *args)
-        F_zk = loss_f(z_k, *args)
-        F_xk_arr.append(np.log10(F_xk))
+        tk_1 = (1 + np.sqrt(1+4*tk**2))/2 
+        F_xk = loss_f(x_k, *args) 
+        F_zk = loss_f(z_k, *args) 
+        F_xk_arr.append(np.log10(F_xk)) 
 
         if len(F_xk_arr)>iter_min:
             relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
@@ -433,7 +450,7 @@ def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, 
         itercount+=1
         if itercount%50==0:
             chi, l2 =loss_f_arr(x_k, *args)
-            logger.debug("iternum:",itercount, ", L:", L, "F_xk:", np.log10(F_xk), "chi:", chi, "reg:", l2, np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1]))
+            logger.debug("iternum:%d, L: %e, F_xk: %e, chi:%e, reg: %e, rela_err:%e"  % (itercount, L, np.log10(F_xk), chi, l2, np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])))
             line, = ax.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
 
             plt.pause(0.01)
@@ -448,7 +465,7 @@ def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, 
     logger.info("end; fitting. iternum:%d, relative dif of F: %e" % (itercount, relative_dif))
 
 
-    return y_k
+    return y_k, SOLVED_FLAG_DONE
 
 
 

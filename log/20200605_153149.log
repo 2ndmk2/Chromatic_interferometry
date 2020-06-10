@@ -1,0 +1,12 @@
+2020-06-05 15:31:49,191 - INFO - <module>- Main part starts
+2020-06-05 15:31:57,024 - INFO - only_fx_mfista- end; fitting. iternum:201, relative dif of F: 5.915600e-06
+2020-06-05 15:32:04,554 - INFO - only_fx_mfista- end; fitting. iternum:201, relative dif of F: 5.737038e-06
+2020-06-05 15:32:11,688 - INFO - only_fx_mfista- end; fitting. iternum:201, relative dif of F: 5.668293e-06
+2020-06-05 15:32:18,950 - INFO - only_fx_mfista- end; fitting. iternum:201, relative dif of F: 5.411189e-06
+2020-06-05 15:32:21,265 - INFO - plots_comp- 0 model, rms:1.208358e+01
+2020-06-05 15:32:21,297 - INFO - plots_comp- 1 model, rms:1.208408e+01
+2020-06-05 15:32:21,334 - INFO - plots_comp- 2 model, rms:1.208745e+01
+2020-06-05 15:32:21,365 - INFO - plots_comp- 3 model, rms:1.209998e+01
+2020-06-05 15:32:21,398 - INFO - plots_comp- 4 model, rms:2.130693e+01
+2020-06-05 15:32:21,430 - INFO - plots_comp- 5 model, rms:2.174695e+01
+2020-06-05 15:32:21,462 - INFO - plots_comp- 6 model, rms:0.000000e+00

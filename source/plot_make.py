@@ -1,16 +1,31 @@
 import numpy as np
 import matplotlib as mpl
-mpl.use('Agg')
 import matplotlib.pyplot as plt
 import os
+import logging
+import sys
 
 def int_div_for_imshow(int_num):
     div_num = int(np.sqrt(int_num))
     return div_num+1
 
+logger = logging.getLogger(__name__)
 
+from pathlib import Path
+rootdir = Path().resolve()
+sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../tests')))
+from setting import *
+
+import matplotlib as mpl
+if not LOCAL_FLAG:
+    mpl.use('Agg')
 
 def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None):
+
+
+    ## if args is array form
+    if len(np.shape(args)) == 4:
+        args = args[0]
 
     x_len, y_len = np.shape(args[0].T)
     len_model = len(args)
@@ -22,14 +37,12 @@ def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None):
         i_args_div, i_args_mod = int(i/len_fig_side), i % len_fig_side
         show_region = args[i].real
         show_region = show_region[int(x_len/2) - width_im:int(x_len/2) + width_im, int(y_len/2) - width_im:int(y_len/2) + width_im]
-        print(np.shape(show_region))
-        print(np.max(show_region))
         axs[i_args_div, i_args_mod].imshow(args[i].real.T, origin = "lower", vmax = np.max(show_region), vmin = np.min(show_region))
         axs[i_args_div, i_args_mod].set_xlim(int(x_len/2) - width_im,int(x_len/2) + width_im)
         axs[i_args_div, i_args_mod].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
 
     if save_folder !=None:
-        plt.savefig(save_folder + "image.pdf", bbox_inches='tight')
+        plt.savefig(os.path.join(save_folder, "image.pdf"), bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -45,7 +58,7 @@ def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None):
         axs[i_args_div, i_args_mod].plot(args[i].real.T.flatten())
         axs[i_args_div, i_args_mod].set_xlim(num_center - width_im, num_center + width_im)
     if save_folder !=None:
-        plt.savefig(save_folder + "zoom_view.pdf", bbox_inches='tight')
+        plt.savefig(os.path.join(save_folder, "zoom_view.pdf"), bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -57,10 +70,10 @@ def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None):
         axs[i_args_div, i_args_mod].hist(args[i].real.flatten(), bins=50)
         axs[i_args_div, i_args_mod].set_yscale('log')
         rms = np.sqrt(np.mean((answer.real - args[i].real)**2))/np.mean(answer.real)
-        print("%d model, rms:%e" % (i, rms))
+        logger.info("%d model, rms:%e" % (i, rms))
 
     if save_folder !=None:
-        plt.savefig(save_folder + "hist_val.pdf", bbox_inches='tight')
+        plt.savefig(os.path.join(save_folder,  "hist_val.pdf"), bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -70,6 +83,12 @@ def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None):
 
 def plots_vis(*args, vis_obs, fig_size = (10,10), save_folder = None):
     vis_obs_conv = np.fft.fftshift(vis_obs)
+
+    ## if args is array form
+    if len(np.shape(args)) == 4:
+        args = args[0]
+    
+
 
     nx, ny = np.shape(args[0])
     x = np. arange(nx)
@@ -104,7 +123,7 @@ def plots_vis(*args, vis_obs, fig_size = (10,10), save_folder = None):
         axs[i_args_div, i_args_mod].scatter(dist_obs_plt, model_fft[i].real, s =ms_size, color="r")
 
     if save_folder !=None:
-        plt.savefig(save_folder + "vis.pdf", bbox_inches='tight')
+        plt.savefig(os.path.join(save_folder, "vis.pdf"), bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -118,7 +137,7 @@ def plots_vis(*args, vis_obs, fig_size = (10,10), save_folder = None):
         axs[i_args_div, i_args_mod].hist(model_fft_all[i].real, bins = 100, color = "k", log=True)
         
     if save_folder !=None:
-        plt.savefig(save_folder + "vis_hist.pdf", bbox_inches='tight')
+        plt.savefig(os.path.join(save_folder,  "vis_hist.pdf"), bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -158,7 +177,7 @@ def plots_model(*args, width_im = 10, save_folder = None):
         axs[i_args_div, i_args_mod].set_xlim(0, width_im)
 
     if save_folder !=None:
-        plt.savefig(save_folder + "model_dist.pdf", bbox_inches='tight')
+        plt.savefig(os.path.join(save_folder,  "model_dist.pdf"), bbox_inches='tight')
         plt.close()
     else:
         plt.show()

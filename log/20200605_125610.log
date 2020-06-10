@@ -1,0 +1,10 @@
+2020-06-05 12:56:10,288 - INFO - <module>- Main part starts
+2020-06-05 12:56:14,764 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 1.329065e-16
+2020-06-05 12:56:18,674 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 2.525223e-15
+2020-06-05 12:56:22,568 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 2.115865e-13
+2020-06-05 12:56:26,484 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 1.318698e-11
+2020-06-05 12:56:30,381 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 5.476000e-10
+2020-06-05 12:56:34,299 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 8.541690e-09
+2020-06-05 12:56:38,387 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 5.127748e-10
+2020-06-05 12:57:08,161 - ERROR - only_fx_mfista- Too large L!! Change l1 or l2 values!!
+2020-06-05 12:57:08,161 - INFO - only_fx_mfista- end fitting: itercount: 49

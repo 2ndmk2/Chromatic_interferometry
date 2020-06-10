@@ -8,6 +8,8 @@ logging.basicConfig("test", filename='test.log',
 import os
 import sys
 from pathlib import Path
+import pickle
+
 rootdir = Path().resolve()
 #rootdir = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../source')))
@@ -42,32 +44,39 @@ def main():
 	dx, dy = 0.01, 0.01
 	r_main = 0.03 *1
 	width  = 0.02 * 1
-	data, xx, yy = data_make.ring_make(x_len, y_len, dx, dy, r_main, width, function = data_make.gaussian_function_1d)
+	input_model, xx, yy = data_make.ring_make(x_len, y_len, dx, dy, r_main, \
+		width, function = data_make.gaussian_function_1d)
 
-	u_max = 0.5/dx
-	v_max = 0.5/dy
-	du = 1/(dx * x_len)
-	dv = 1/(dx * y_len)
-	u= np.arange(0,x_len * du, du)
-	v = np.arange(0,y_len * dv, dv)
-	u_shift = u - np.mean(u)
-	v_shift = v - np.mean(v)
 
 	##### Setting observations
 	imsize = 256
 	period = 24
 	data_num = 30
 	obs_duration = 2
-	n_antena = 12
-	s_n = 10
+	n_antena = 8
+	s_n = 3
 	wavelength = 1#mm
 	arcsec = 1/206265
 	radius_km = 1.5 ##sphere radius
 	radius_mm = radius_km  * 1000 * 1000 # mm
 	baseline_mag = radius_mm * arcsec /wavelength ##
-	obs_ex = data_make.observatory(data, data_num , period, s_n, obs_duration , n_antena, baseline_mag, [0., 0], save_folder = save_folder)
-	obs_ex.set_antn()
-	obs_ex.plotter_uv_sampling()
+	target_pos = [0., 0] ##alpha, beta
+
+	## Vertual Obervatory
+	obs_name = "test_observatory"
+	obs_file = obs_name + ".pk"
+	if not os.path.exists(obs_file):
+		obs_ex = data_make.observatory(input_model, data_num,\
+		 period, s_n, obs_duration , n_antena, baseline_mag, target_pos , save_folder = save_folder)
+		obs_ex.set_antn()
+		obs_ex.plotter_uv_sampling()
+
+		with open(obs_file, "wb") as f:
+		    pickle.dump(obs_ex, f)
+
+	else:
+		with open(obs_file, "rb") as f:
+			obs_ex = pickle.load(f) 
 
 
 	## Making obs data
@@ -90,25 +99,47 @@ def main():
 
 	## Setting priors for model
 	model_prior = np.abs(dirty_image)
-	l2_lambda = 1e2 
 	images = model_prior
+
+
+
+	## L2 regluarzation + positive condition
 	stop_ratio = 1e-7
-
-	model_map0 = solver.only_fx_mfista(images, solver.loss_function_arr_l2, solver.grad_loss_l2, solver.zero_func, 1.1, 1e-4, 1000, 300, True, stop_ratio, vis_obs, model_prior, l2_lambda)
-	#model_map1 = only_fx_mfista(images, loss_function_arr_l2, grad_loss_l2, zero_func, 1.01, 1e-4, 500, True, vis_obs, model_prior, l2_lambda)
-	model_map2 = solver.only_fx_mfista(images, solver.loss_function_arr_TSV, solver.grad_loss_tsv, solver.zero_func, 1.1, 1e-4, 1000, 300, True, stop_ratio, vis_obs, model_prior, l2_lambda)
-	#model_map0 = model_map2
-	model_map1 = model_map2
-	##
-
-	l2_lambda = 10**4
-	l1_lambda = 10**5
-	model_map3 = solver.fx_L1_mfista(images, solver.loss_function_arr_TSV, solver.grad_loss_tsv, solver.L1_norm, 1.05, 1e-4, 1000,300, False,stop_ratio,  vis_obs, l1_lambda, l2_lambda)
-	print(len(model_map2[model_map2==0]), len(model_map3[model_map3==0]))
+	l2_lambda = 1e0
+	L_init = 1e-4
+	eta_init = 1.1
+	maxiter = 1000
+	miniter = 300
+	positive_solve = True
 
 
-	plot_make.plots_comp(np.abs(beam_image), model_prior, model_map0, model_map1, model_map2, model_map3, data,width_im = 30, fig_size = (10,10), save_folder = save_folder)
-	plot_make.plots_vis(model_map0, model_map1, model_map2, model_map3, data, vis_obs =  vis_obs,save_folder = save_folder)
+	model_map0, solved_flag0 = solver.only_fx_mfista(images, solver.loss_function_arr_l2, \
+		solver.grad_loss_l2, solver.zero_func, eta_init, L_init, maxiter, miniter, positive_solve ,\
+		 stop_ratio, vis_obs, model_prior, l2_lambda)
+	
+	## TSV regluarzation + positive condition
+	ltsv_lambda = 1e0
+	eta_init =1.1
+
+
+	model_map1, solved_flag2 = solver.only_fx_mfista(images, solver.loss_function_arr_TSV, \
+		solver.grad_loss_tsv, solver.zero_func, eta_init, L_init, maxiter, miniter,positive_solve,\
+		 stop_ratio, vis_obs, model_prior, ltsv_lambda)
+
+	## L1 & TSV regluarzation + positive condition
+	l2_lambda = 10**2
+	l1_lambda = 10**3
+	eta_init = 1.05
+	positive_solve = False
+
+
+	model_map3, solved_flag3 = solver.fx_L1_mfista(images, solver.loss_function_arr_TSV, \
+		solver.grad_loss_tsv, solver.L1_norm, eta_init, L_init, maxiter, miniter,positive_solve,\
+		stop_ratio,  vis_obs, l1_lambda, l2_lambda)
+
+
+	plot_make.plots_comp(np.abs(beam_image), model_prior, model_map0, model_map1, model_map3, input_model,width_im = 30, fig_size = (10,10), save_folder = save_folder)
+	plot_make.plots_vis(model_map0, model_map1,  model_map3, input_model, vis_obs =  vis_obs,save_folder = save_folder)
 	#plots_model(model_map0, model_map1, model_map2, model_map3,data, width_im = 40, save_folder = save_folder)
 
 

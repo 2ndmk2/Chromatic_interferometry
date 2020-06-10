@@ -1,0 +1,21 @@
+2020-06-05 15:38:58,831 - INFO - <module>- Main part starts
+2020-06-05 15:39:03,632 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 0.000000e+00
+2020-06-05 15:39:07,657 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 2.479039e-15
+2020-06-05 15:39:12,187 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 2.198511e-13
+2020-06-05 15:39:16,494 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 1.495411e-11
+2020-06-05 15:39:20,818 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 8.064221e-10
+2020-06-05 15:39:25,112 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 9.083201e-09
+2020-06-05 15:39:29,312 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 4.962614e-10
+2020-06-05 15:39:59,373 - ERROR - only_fx_mfista- Too large L!! Change l1 or l2 values!!
+2020-06-05 15:39:59,373 - INFO - only_fx_mfista- end fitting: itercount: 52
+2020-06-05 15:40:02,667 - INFO - plots_comp- 0 model, rms:1.638561e+01
+2020-06-05 15:40:02,697 - INFO - plots_comp- 1 model, rms:1.638560e+01
+2020-06-05 15:40:02,730 - INFO - plots_comp- 2 model, rms:1.638556e+01
+2020-06-05 15:40:02,760 - INFO - plots_comp- 3 model, rms:1.638523e+01
+2020-06-05 15:40:02,793 - INFO - plots_comp- 4 model, rms:1.638268e+01
+2020-06-05 15:40:02,824 - INFO - plots_comp- 5 model, rms:1.636386e+01
+2020-06-05 15:40:02,857 - INFO - plots_comp- 6 model, rms:1.622161e+01
+2020-06-05 15:40:02,942 - INFO - plots_comp- 7 model, rms:1.583342e+01
+2020-06-05 15:40:02,973 - INFO - plots_comp- 8 model, rms:1.890428e+01
+2020-06-05 15:40:03,006 - INFO - plots_comp- 9 model, rms:2.174292e+01
+2020-06-05 15:40:03,038 - INFO - plots_comp- 10 model, rms:0.000000e+00
