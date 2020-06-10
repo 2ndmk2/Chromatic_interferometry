@@ -49,18 +49,18 @@ def main():
 
 
 	##### Setting observations
-	imsize = 256
-	period = 24
-	data_num = 30
-	obs_duration = 2
-	n_antena = 8
-	s_n = 3
-	wavelength = 1#mm
-	arcsec = 1/206265
-	radius_km = 1.5 ##sphere radius
+	imsize = 256 ##pixel num
+	period = 24 ## hrs
+	data_num = 30 ## data num
+	obs_duration = 2 ##hrs
+	n_antena = 8 ## num antena
+	s_n = 3 ## signal-to-noise ratio
+	wavelength = 1 #mm
+	arcsec = 1/206265 
+	radius_km = 1.5 ## sphere radius for obs position
 	radius_mm = radius_km  * 1000 * 1000 # mm
-	baseline_mag = radius_mm * arcsec /wavelength ##
-	target_pos = [0., 0] ##alpha, beta
+	baseline_mag = radius_mm * arcsec /wavelength ## baseline u-v dist
+	target_pos = [0., 0] ## alpha, beta
 
 	## Vertual Obervatory
 	obs_name = "test_observatory"
@@ -105,7 +105,7 @@ def main():
 
 	## L2 regluarzation + positive condition
 	stop_ratio = 1e-7
-	l2_lambda = 1e0
+	l2_lambda = 1e0 
 	L_init = 1e-4
 	eta_init = 1.1
 	maxiter = 1000
