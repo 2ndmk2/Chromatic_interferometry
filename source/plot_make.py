@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 from pathlib import Path
 rootdir = Path().resolve()
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../tests')))
+sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../config')))
 from setting import *
 
 import matplotlib as mpl

@@ -1,5 +1,0 @@
-2020-06-03 13:47:30,331 - INFO - <module>- Main part starts
-2020-06-03 13:47:42,396 - INFO - only_fx_mfista- end; fitting
-2020-06-03 13:47:55,874 - INFO - only_fx_mfista- end; fitting
-2020-06-03 13:48:33,223 - ERROR - fx_L1_mfista- Too large L!!
-2020-06-03 13:48:33,223 - INFO - fx_L1_mfista- end fitting: itercount: 27

@@ -1,0 +1,11 @@
+2020-06-16 13:35:05,257|INFO    |__main__|<module>|Main part starts
+2020-06-16 13:35:12,176|ERROR   |solver|only_fx_mfista|Too large L!! Make l1 or l2 regularization parameters small!!
+2020-06-16 13:35:12,176|INFO    |solver|only_fx_mfista|end fitting: itercount: 27
+2020-06-16 13:35:15,708|INFO    |solver|only_fx_mfista|end; fitting. iternum:101, relative dif of F: 1.456627e-06
+2020-06-16 13:35:18,468|INFO    |solver|fx_L1_mfista|end; fitting. iternum:69, relative dif of F: 8.054830e-08
+2020-06-16 13:35:20,540|INFO    |plot_make|plots_comp|0 model, rms:2.174288e+01
+2020-06-16 13:35:20,590|INFO    |plot_make|plots_comp|1 model, rms:1.830782e+01
+2020-06-16 13:35:20,632|INFO    |plot_make|plots_comp|2 model, rms:1.776365e+01
+2020-06-16 13:35:20,701|INFO    |plot_make|plots_comp|3 model, rms:2.048145e+01
+2020-06-16 13:35:20,733|INFO    |plot_make|plots_comp|4 model, rms:8.204080e+00
+2020-06-16 13:35:20,766|INFO    |plot_make|plots_comp|5 model, rms:0.000000e+00

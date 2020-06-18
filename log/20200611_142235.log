@@ -1,0 +1,15 @@
+2020-06-11 14:22:36,126 - INFO - <module>- Main part starts
+2020-06-11 14:22:42,498 - ERROR - only_fx_mfista- Too large L!! Change l1 or l2 values!!
+2020-06-11 14:22:42,498 - INFO - only_fx_mfista- end fitting: itercount: 16
+2020-06-11 14:22:44,667 - DEBUG - only_fx_mfista- iternum:50, L: 5.960041e+04, F_xk: 6.890373e+00, chi:6.923823e+06, reg: 8.436132e+05, rela_err:7.099451e-06
+2020-06-11 14:22:45,745 - DEBUG - only_fx_mfista- iternum:100, L: 6.556045e+04, F_xk: 6.887407e+00, chi:6.922168e+06, reg: 7.934233e+05, rela_err:2.883270e-06
+2020-06-11 14:22:46,812 - DEBUG - only_fx_mfista- iternum:150, L: 5.960041e+04, F_xk: 6.885956e+00, chi:6.921464e+06, reg: 7.686758e+05, rela_err:1.663584e-06
+2020-06-11 14:22:47,890 - DEBUG - only_fx_mfista- iternum:200, L: 6.556045e+04, F_xk: 6.885050e+00, chi:6.920988e+06, reg: 7.532415e+05, rela_err:1.122704e-06
+2020-06-11 14:22:49,060 - DEBUG - only_fx_mfista- iternum:250, L: 6.556045e+04, F_xk: 6.884411e+00, chi:6.920681e+06, reg: 7.423367e+05, rela_err:8.193041e-07
+2020-06-11 14:22:50,168 - DEBUG - only_fx_mfista- iternum:300, L: 5.960041e+04, F_xk: 6.883927e+00, chi:6.920481e+06, reg: 7.340482e+05, rela_err:6.401788e-07
+2020-06-11 14:22:51,325 - DEBUG - only_fx_mfista- iternum:350, L: 6.556045e+04, F_xk: 6.883545e+00, chi:6.920312e+06, reg: 7.275164e+05, rela_err:5.160831e-07
+2020-06-11 14:22:52,461 - DEBUG - only_fx_mfista- iternum:400, L: 6.556045e+04, F_xk: 6.883233e+00, chi:6.920179e+06, reg: 7.221799e+05, rela_err:4.271888e-07
+2020-06-11 14:22:53,628 - DEBUG - only_fx_mfista- iternum:450, L: 6.556045e+04, F_xk: 6.882972e+00, chi:6.920072e+06, reg: 7.177117e+05, rela_err:3.608030e-07
+2020-06-11 14:22:54,779 - DEBUG - only_fx_mfista- iternum:500, L: 5.960041e+04, F_xk: 6.882750e+00, chi:6.919982e+06, reg: 7.139114e+05, rela_err:3.095669e-07
+2020-06-11 14:22:55,912 - DEBUG - only_fx_mfista- iternum:550, L: 6.556045e+04, F_xk: 6.882559e+00, chi:6.919905e+06, reg: 7.106369e+05, rela_err:2.689792e-07
+2020-06-11 14:22:57,088 - DEBUG - only_fx_mfista- iternum:600, L: 6.556045e+04, F_xk: 6.882392e+00, chi:6.919839e+06, reg: 7.077737e+05, rela_err:2.359880e-07

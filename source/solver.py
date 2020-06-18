@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 from pathlib import Path
 rootdir = Path().resolve()
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../tests')))
+sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../config')))
 from setting import *
 
 import matplotlib as mpl
@@ -54,40 +54,36 @@ def d_TSV(mat):
 
 def loss_function_l2(model, *args):
     (obs, model_prior, lambda_l2) = args
-    #model_vis = np.fft.fftshift(np.fft.fft2(model))
     model_vis = np.fft.fft2(model)
     obs_mask = (obs == 0)
     d_vis = model_vis- obs
     d_vis[obs_mask] = 0
     return np.sum(np.abs(d_vis)**2) +  lambda_l2 * np.sum((model-model_prior)**2)
 
-def loss_function_TSV(model, *args):
-    (obs, model_prior, lambda_ltsv) = args
-    #model_vis = np.fft.fftshift(np.fft.fft2(model))
-    model_vis = np.fft.fft2(model)
-    obs_mask = (obs == 0)
-    d_vis = model_vis- obs
-    d_vis[obs_mask] = 0
-    return np.sum(np.abs(d_vis)**2) +  lambda_ltsv * TSV(model)
-
 def loss_function_arr_l2(model, *args):
     (obs, model_prior, lambda_l2) = args
-    #model_vis = np.fft.fftshift(np.fft.fft2(model))
     model_vis = np.fft.fft2(model)
     obs_mask = (obs == 0)
     d_vis = model_vis- obs
     d_vis[obs_mask] = 0
     return [np.sum(np.abs(d_vis)**2), lambda_l2 * np.sum((model-model_prior)**2)]
 
-def loss_function_arr_TSV(model, *args):
-    (obs, model_prior, lambda_ltsv) = args
-    #model_vis = np.fft.fftshift(np.fft.fft2(model))
+def grad_loss_l2(model, *args):
+    
+    (obs, model_prior, lambda_l2) = args
+
+    ## Gradient for L2
+    dl2_dmodel =2 * lambda_l2 * (model-model_prior)
+    nx, ny = np.shape(model)
+    
+    ## Gradient for chi^2
     model_vis = np.fft.fft2(model)
     obs_mask = (obs == 0)
-    d_vis = model_vis- obs
+    d_vis = model_vis - obs
     d_vis[obs_mask] = 0
-    return [np.sum(np.abs(d_vis)**2), lambda_ltsv * TSV(model)]
-
+    ifft_F = np.fft.ifft2(d_vis)
+    dF_dmodel =2* nx * ny* ifft_F.real 
+    return dF_dmodel + dl2_dmodel
 
 def grad_loss_arr_l2(model, *args):
     
@@ -98,35 +94,43 @@ def grad_loss_arr_l2(model, *args):
     nx, ny = np.shape(model)
     
     ## Gradient for chi^2
-    #model_vis = np.fft.fftshift(np.fft.fft2(model))
     model_vis = np.fft.fft2(model)
     obs_mask = (obs == 0)
     d_vis = model_vis - obs
     d_vis[obs_mask] = 0
-    #vis_F = np.fft.ifftshift(d_vis)
     ifft_F = np.fft.ifft2(d_vis)
-    dF_dmodel =2*    ifft_F.real 
+    dF_dmodel =2* nx * ny * ifft_F.real 
     return dF_dmodel, dl2_dmodel 
 
-def grad_loss_l2(model, *args):
-    
+## For comparison with above analytical expressions
+def grad_loss_numerical_l2(model,i,j, *args):
     (obs, model_prior, lambda_l2) = args
 
-    ## Gradient for L2
-    dl2_dmodel =2 * lambda_l2 * (model-model_prior)
-    nx, ny = np.shape(model)
-    
-    
-    ## Gradient for chi^2
-    #model_vis = np.fft.fftshift(np.fft.fft2(model))
+    model_new = np.copy(model) 
+    eps = 1e-5
+    model_new[i][j] += eps
+    chi_new, l2_new = loss_function_arr_l2(model_new, *args)
+    chi_, l2_ = loss_function_arr_l2(model, *args)
+    return (chi_new-chi_)/eps, (l2_new-l2_)/eps
+
+
+def loss_function_TSV(model, *args):
+    (obs, model_prior, lambda_ltsv) = args
     model_vis = np.fft.fft2(model)
     obs_mask = (obs == 0)
-    d_vis = model_vis - obs
+    d_vis = model_vis- obs
     d_vis[obs_mask] = 0
-    #vis_F = np.fft.ifftshift(d_vis)
-    ifft_F = np.fft.ifft2(d_vis)
-    dF_dmodel =2* nx * ny* ifft_F.real 
-    return dF_dmodel + dl2_dmodel
+    return np.sum(np.abs(d_vis)**2) +  lambda_ltsv * TSV(model)
+
+
+def loss_function_arr_TSV(model, *args):
+    (obs, model_prior, lambda_ltsv) = args
+    model_vis = np.fft.fft2(model)
+    obs_mask = (obs == 0)
+    d_vis = model_vis- obs
+    d_vis[obs_mask] = 0
+    return [np.sum(np.abs(d_vis)**2), lambda_ltsv * TSV(model)]
+
 
 def grad_loss_tsv(model, *args):
     
@@ -137,12 +141,10 @@ def grad_loss_tsv(model, *args):
     
     
     ## Gradient for chi^2
-    #model_vis = np.fft.fftshift(np.fft.fft2(model))
     model_vis = np.fft.fft2(model)
     obs_mask = (obs == 0)
     d_vis = model_vis - obs
     d_vis[obs_mask] = 0
-    #vis_F = np.fft.ifftshift(d_vis)
     ifft_F = np.fft.ifft2(d_vis)
     dF_dmodel =2* nx * ny* ifft_F.real 
     return dF_dmodel + lambda_ltsv * d_TSV(model)
@@ -156,28 +158,281 @@ def grad_loss_arr_TSV(model, *args):
     
     
     ## Gradient for chi^2
-    #model_vis = np.fft.fftshift(np.fft.fft2(model))
     model_vis = np.fft.fft2(model)
     obs_mask = (obs == 0)
     d_vis = model_vis - obs
     d_vis[obs_mask] = 0
-    #vis_F = np.fft.ifftshift(d_vis)
     ifft_F = np.fft.ifft2(d_vis)
     dF_dmodel =2* nx * ny * ifft_F.real 
     return dF_dmodel, lambda_ltsv * d_TSV(model)
 
-def grad_loss_numerical_l2(model,i,j, *args):
-    (obs, model_prior, lambda_l2) = args
+## dummy function
+def zero_func(model, *args):
+    return 0
 
-    model_new = np.copy(model) 
-    eps = 1e-5
-    model_new[i][j] += eps
-    chi_new, l2_new = loss_function_arr_l2(model_new, *args)
-    chi_, l2_ = loss_function_arr_l2(model, *args)
-    return (chi_new-chi_)/eps, (l2_new-l2_)/eps
+## For fx_L1_mfista
+def L1_norm(model, *args):
+    (obs, lambda_l1, lambda_l2) = args
+    return lambda_l1 * np.sum(np.abs(model))
+
+
+## For FISTA algorithm
+def calc_Q(x, y, f, g, grad_f, L, *args):
+    term1 = f(y, *args)
+    term2 = np.sum((x-y)*grad_f)
+    term3 = (L/2) * np.sum((x-y)**2)
+    term4 = g(x, *args)
+    return term1 + term2 + term3 + term4
+
+## For proximal mapping
+def soft_threshold(model, lambda_t, print_flag=False):
+
+    mask_temp1 = model> lambda_t
+    mask_temp2 = (model> -lambda_t) * (model< lambda_t)
+    mask_temp3 = model< - lambda_t
+    model[mask_temp1] -= lambda_t
+    model[mask_temp2] =0
+    model[mask_temp3] += lambda_t
+    if print_flag:
+        logger.info(len(model[mask_temp1]), len(model[mask_temp2]),len(model[mask_temp3]),lambda_t)
+    return model
+
+## For proximal mapping under positive condition
+def positive_soft_threshold(model, lambda_t, print_flag=False):
+
+    mask_temp1 = model> lambda_t
+    mask_temp2 = model< lambda_t
+    model[mask_temp1] -= lambda_t
+    model[mask_temp2] =0
+    if print_flag:
+        logger.info(len(model[mask_temp1]), len(model[mask_temp2]),len(model[mask_temp3]),lambda_t)
+    return model
+
+
+def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_init = 1, iter_max = 1000, iter_min =300, \
+ mask_positive = True,  stop_ratio = 1e-10, restart = True, *args):
+
+    (obs, lambda_l1, lambda_l2) = args
+    tk = 1
+    x_k=init_model
+    y_k = init_model
+    x_prev = init_model
+    L=L_init
+
+    loss_f = lambda x, *args: np.sum(loss_f_arr(x, *args))
+
+    ## Loop for mfista
+    itercount = 0
+    F_xk_arr = []
+    fig, ax = plt.subplots(1, 1)
+
+    while(1):
+        
+
+        ## loop for L
+        f_grad_yk = grad_f(y_k, *args)
+        L = L/eta
+
+        while(1):
+
+            logger.debug("itercount: %d, L: %e, eta:%e" % (itercount, L, eta))
+            if L > MAX_L:
+                if ETA_MIN < eta:
+                    L = L_init
+                    eta = eta**0.5
+                    iterncount = 0
+                    x_k = init_model
+                    y_k = init_model
+                    x_prev = init_model
+
+                    continue
+                else:
+                    logger.error("Too large L!! Change l1 or l2 values!!")
+                    logger.info("end fitting: itercount: %d" % itercount)
+                    return y_k, SOLVED_FLAG_ER 
+                #raise ValueError("fitting error!")
+            if mask_positive:
+                z_temp = positive_soft_threshold(y_k -(1/L) *f_grad_yk,lambda_l1 *(1/L)) 
+            else:
+                z_temp = soft_threshold(y_k -(1/L) *f_grad_yk,lambda_l1 *(1/L)) 
+            Q_temp = calc_Q(z_temp, y_k, loss_f,L1_norm, f_grad_yk, L, *args)
+            F_temp = loss_f(z_temp, *args) + L1_norm(z_temp, *args)
+            if F_temp < Q_temp:
+                break
+            else:
+                L = L * eta
+
+
+        z_k = z_temp
+        tk_1 = (1 + np.sqrt(1+4*tk**2))/2
+        F_xk = loss_f(x_k, *args) + L1_norm(x_k, *args)
+        F_zk = loss_f(z_k, *args) + L1_norm(z_k, *args)
+        F_xk_arr.append(np.log10(F_xk))
+
+        if len(F_xk_arr)>iter_min:
+            relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
+
+            if relative_dif < stop_ratio:
+                plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
+                plt.savefig(FIG_FOLDER + "fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
+                plt.close()
+                break
+
+
+        if F_xk > F_zk:
+            x_k = z_k
+            y_k = x_k + ((tk-1)/tk_1) * (x_k - x_prev)
+            x_prev = x_k
+            tk = tk_1
+        else:
+            x_k = x_prev
+            y_k = x_k + (tk/tk_1)*(z_k-x_k)
+            tk = tk_1
+            if restart:
+                tk = 1
+        itercount+=1
+
+        if itercount%50==0:
+
+            chi, l2 =loss_f_arr(x_k, *args)
+            logger.debug("iternum:%d, L: %e, F_xk: %e, chi:%e, reg: %e, rela_err:%e"  % (itercount, L, np.log10(F_xk), chi, l2, np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])))
+            line, = ax.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
+            plt.pause(0.01)
+            line.remove()
+
+
+        if itercount > iter_max:
+            plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
+            plt.savefig(FIG_FOLDER + "fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
+            plt.close()
+            break
+    relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
+    logger.info("end; fitting. iternum:%d, relative dif of F: %e" % (itercount, relative_dif))
+
+    return y_k, SOLVED_FLAG_DONE
+
+
+
+def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_init = 1, iter_max = 1000, \
+    iter_min = 300, mask_positive = True, stop_ratio = 1e-10, restart = True,  *args):
+
+    (obs, model_prior, lambda_l2) = args
+    tk = 1
+    x_k = init_model
+    y_k = init_model
+    x_prev = init_model
+    L=L_init
+    
+    loss_f = lambda x, *args: np.sum(loss_f_arr(x, *args))
+    F_xk_arr = [] 
+    fig, ax = plt.subplots(1, 1)
+
+    ## Loop for mfista
+    itercount = 0
+
+    while(1):
+        
+
+        ## loop for L
+        f_grad_yk = grad_f(y_k, *args)
+        loss_f_yk = loss_f(y_k, *args)
+        L = L/eta
+        print(itercount, tk)
+        while(1):
+            logger.debug("itercount: %d, L: %e, eta:%e, tk%f" % (itercount, L, eta, tk))
+
+            if L > MAX_L:
+                if ETA_MIN < eta:
+                    L = L_init
+                    eta = eta**0.5
+                    iterncount = 0
+                    continue
+                    
+                else:
+                    logger.error("Too large L!! Make l1 or l2 regularization parameters small!!")
+                    logger.info("end fitting: itercount: %d" % itercount)
+                    return y_k, SOLVED_FLAG_ER 
+
+
+            z_temp = y_k -(1/L) *f_grad_yk
+            if mask_positive:
+                z_temp[z_temp<0] = 0
+
+            Q_temp = calc_Q(z_temp, y_k, loss_f,loss_g, f_grad_yk, L, *args)
+            F_temp = loss_f(z_temp, *args)
+            if F_temp < Q_temp:
+                break
+            else:
+                L = L * eta
+
+        z_k = y_k -(1/L) *f_grad_yk
+        if mask_positive:
+            z_k[z_k<0] = 0        
+        tk_1 = (1 + np.sqrt(1+4*tk**2))/2 
+        F_xk = loss_f(x_k, *args) 
+        F_zk = loss_f(z_k, *args) 
+        F_xk_arr.append(np.log10(F_xk)) 
+
+        if len(F_xk_arr)>iter_min:
+            relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - \
+                np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
+
+            if relative_dif < stop_ratio:
+                plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
+                plt.savefig(FIG_FOLDER + "fitting_curve_%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
+                plt.close()
+                break
+
+        if F_xk > F_zk:
+            x_k = z_k
+            y_k = x_k + ((tk-1)/tk_1) * (x_k - x_prev)
+            x_prev = x_k
+            tk = tk_1
+        else:
+            x_k = x_prev
+            y_k = x_k + (tk/tk_1)*(z_k-x_k)
+            tk = tk_1
+            if restart:
+                tk = 1
+
+
+        itercount+=1
+        if itercount%50==0:
+            chi, l2 =loss_f_arr(x_k, *args)
+            logger.debug("iternum:%d, L: %e, F_xk: %e, chi:%e, reg: %e, rela_err:%e"  % (itercount, L, np.log10(F_xk), chi, l2, np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])))
+            line, = ax.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
+            plt.pause(0.001)
+            line.remove()
+        if itercount > iter_max:
+            plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
+            plt.savefig(FIG_FOLDER + "fitting_curve_%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
+            plt.close()
+            break
+    relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
+    logger.info("end; fitting. iternum:%d, relative dif of F: %e" % (itercount, relative_dif))
+
+
+    return y_k, SOLVED_FLAG_DONE
+
+
+
+def adam(init_model, loss_f, grad_f, alpha = 0.001, beta_1 = 0.9, beta_2 = 0.999, epsilon = 1e-10, iter_max = 1000, *args):
+
+    M_prev = np.zeros(np.shape(init_model))
+    R_prev = np.zeros(np.shape(init_model))
+    model_prev = init_model
+
+    for i in range(1, iter_max):
+        M = beta_1 * M_prev + ( 1-beta_1) * grad_f(model_prev)
+        R = beta_2 * R_prev + (1- beta_2) * grad_f(model_prev)**2
+        M_hat = M/(1- beta_1 ** i)
+        R_hat = R/(1-beta_2 **i)
+        model_prev = model_prev -alpha * M_hat/(np.sqrt(np.sum(R_hat**2)) + epsilon)
+    return model_prev
+
 
     
-
+## Optimization method insetad of FISTA
 def steepest_method(init_model, init_alpha, ryo = 0.7,  c1=0.7, eps_stop = 1e-10, iter_max = 1000, loss_name = "tsv", *args):
     (obs, model_prior, lambda_l2) = args
     model = init_model
@@ -232,258 +487,6 @@ def steepest_method(init_model, init_alpha, ryo = 0.7,  c1=0.7, eps_stop = 1e-10
             break
     
     return model
-
-def zero_func(model, *args):
-    
-    return 0
-
-def L1_norm(model, *args):
-    (obs, lambda_l1, lambda_l2) = args
-
-    return lambda_l1 * np.sum(np.abs(model))
-
-def calc_Q(x, y, f, g, grad_f, L, *args):
-    term1 = f(y, *args)
-    term2 = np.sum((x-y)*grad_f)
-    term3 = (L/2) * np.sum((x-y)**2)
-    term4 = g(x, *args)
-
-    return term1 + term2 + term3 + term4
-
-def soft_threshold(model, lambda_t, print_flag=False):
-
-    mask_temp1 = model> lambda_t
-    mask_temp2 = (model> -lambda_t) * (model< lambda_t)
-    mask_temp3 = model< - lambda_t
-    model[mask_temp1] -= lambda_t
-    model[mask_temp2] =0
-    model[mask_temp3] += lambda_t
-    if print_flag:
-        logger.info(len(model[mask_temp1]), len(model[mask_temp2]),len(model[mask_temp3]),lambda_t)
-    return model
-
-def positive_soft_threshold(model, lambda_t, print_flag=False):
-
-    mask_temp1 = model> lambda_t
-    mask_temp2 = model< lambda_t
-    model[mask_temp1] -= lambda_t
-    model[mask_temp2] =0
-    if print_flag:
-        logger.info(len(model[mask_temp1]), len(model[mask_temp2]),len(model[mask_temp3]),lambda_t)
-    return model
-
-
-def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_init = 1, iter_max = 1000, iter_min =300,  mask_positive = True,  stop_ratio = 1e-10,  *args):
-
-    (obs, lambda_l1, lambda_l2) = args
-    tk = 1
-    x_k=init_model
-    y_k = init_model
-    x_prev = init_model
-    L=L_init
-
-    loss_f = lambda x, *args: np.sum(loss_f_arr(x, *args))
-
-    ## Loop for mfista
-    itercount = 0
-    F_xk_arr = []
-    fig, ax = plt.subplots(1, 1)
-
-    while(1):
-        
-
-        ## loop for L
-        f_grad_yk = grad_f(y_k, *args)
-        L = L/eta
-
-        while(1):
-
-            logger.debug("itercount: %d, L: %e, eta:%e" % (itercount, L, eta))
-            if L > MAX_L:
-                if ETA_MIN < eta:
-                    L = L_init
-                    eta = eta**0.5
-                    iterncount = 0
-                    x_k = init_model
-                    y_k = init_model
-                    x_prev = init_model
-                    
-                    continue
-                else:
-                    logger.error("Too large L!! Change l1 or l2 values!!")
-                    logger.info("end fitting: itercount: %d" % itercount)
-                    return y_k, SOLVED_FLAG_ER 
-                #raise ValueError("fitting error!")
-            if mask_positive:
-                z_temp = positive_soft_threshold(y_k -(1/L) *f_grad_yk,lambda_l1 *(1/L)) 
-            else:
-                z_temp = soft_threshold(y_k -(1/L) *f_grad_yk,lambda_l1 *(1/L)) 
-            Q_temp = calc_Q(z_temp, y_k, loss_f,L1_norm, f_grad_yk, L, *args)
-            F_temp = loss_f(z_temp, *args) + L1_norm(z_temp, *args)
-            if F_temp < Q_temp:
-                break
-            else:
-                L = L * eta
-
-
-        z_k = z_temp
-        tk_1 = (1 + np.sqrt(1+4*tk**2))/2
-        F_xk = loss_f(x_k, *args) + L1_norm(x_k, *args)
-        F_zk = loss_f(z_k, *args) + L1_norm(z_k, *args)
-        F_xk_arr.append(np.log10(F_xk))
-
-        if len(F_xk_arr)>iter_min:
-            relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
-
-            if relative_dif < stop_ratio:
-                plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-                plt.savefig(FIG_FOLDER + "fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
-                plt.close()
-                break
-
-
-        if F_xk > F_zk:
-            x_k = z_k
-            y_k = x_k + ((tk-1)/tk_1) * (x_k - x_prev)
-            x_prev = x_k
-        else:
-            x_k = x_prev
-            y_k = x_k + (tk/tk_1)*(z_k-x_k)
-        itercount+=1
-        if itercount%50==0:
-
-            chi, l2 =loss_f_arr(x_k, *args)
-            logger.debug("iternum:%d, L: %e, F_xk: %e, chi:%e, reg: %e, rela_err:%e"  % (itercount, L, np.log10(F_xk), chi, l2, np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])))
-            line, = ax.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-            plt.pause(0.01)
-            line.remove()
-
-
-        if itercount > iter_max:
-            plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-            plt.savefig(FIG_FOLDER + "fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
-            plt.close()
-            break
-    relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
-    logger.info("end; fitting. iternum:%d, relative dif of F: %e" % (itercount, relative_dif))
-
-    return y_k, SOLVED_FLAG_DONE
-
-
-
-def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_init = 1, iter_max = 1000, iter_min = 300, mask_positive = True, stop_ratio = 1e-10, *args):
-
-    (obs, model_prior, lambda_l2) = args
-    tk = 1
-    x_k = init_model
-    y_k = init_model
-    x_prev = init_model
-    L=L_init
-
-    loss_f = lambda x, *args: np.sum(loss_f_arr(x, *args))
-    F_xk_arr = []
-    fig, ax = plt.subplots(1, 1)
-
-    ## Loop for mfista
-    itercount = 0
-
-    while(1):
-        
-
-        ## loop for L
-        f_grad_yk = grad_f(y_k, *args)
-        loss_f_yk = loss_f(y_k, *args)
-        L = L/eta**4
-
-        while(1):
-            logger.debug("itercount: %d, L: %e, eta:%e" % (itercount, L, eta))
-            if L > MAX_L:
-                if ETA_MIN < eta:
-                    L = L_init
-                    eta = eta**0.5
-                    iterncount = 0
-                    x_k = init_model
-                    y_k = init_model
-                    x_prev = init_model
-                    continue
-                else:
-                    logger.error("Too large L!! Change l1 or l2 values!!")
-                    logger.info("end fitting: itercount: %d" % itercount)
-                    return y_k, SOLVED_FLAG_ER 
-
-
-            z_temp = y_k -(1/L) *f_grad_yk
-            if mask_positive:
-                z_temp[z_temp<0] = 0
-
-            Q_temp = calc_Q(z_temp, y_k, loss_f,loss_g, f_grad_yk, L, *args)
-            F_temp = loss_f(z_temp, *args)
-            if F_temp < Q_temp:
-                break
-            else:
-                L = L * eta
-
-        z_k = y_k -(1/L) *f_grad_yk
-        if mask_positive:
-            z_k[z_k<0] = 0        
-        tk_1 = (1 + np.sqrt(1+4*tk**2))/2 
-        F_xk = loss_f(x_k, *args) 
-        F_zk = loss_f(z_k, *args) 
-        F_xk_arr.append(np.log10(F_xk)) 
-
-        if len(F_xk_arr)>iter_min:
-            relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
-
-            if relative_dif < stop_ratio:
-                plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-                plt.savefig(FIG_FOLDER + "fitting_curve_%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
-                plt.close()
-                break
-
-        if F_xk > F_zk:
-            x_k = z_k
-            y_k = x_k + ((tk-1)/tk_1) * (x_k - x_prev)
-            x_prev = x_k
-        else:
-            x_k = x_prev
-            y_k = x_k + (tk/tk_1)*(z_k-x_k)
-        itercount+=1
-        if itercount%50==0:
-            chi, l2 =loss_f_arr(x_k, *args)
-            logger.debug("iternum:%d, L: %e, F_xk: %e, chi:%e, reg: %e, rela_err:%e"  % (itercount, L, np.log10(F_xk), chi, l2, np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])))
-            line, = ax.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-
-            plt.pause(0.01)
-            line.remove()
-
-        if itercount > iter_max:
-            plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-            plt.savefig(FIG_FOLDER + "fitting_curve_%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
-            plt.close()
-            break
-    relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
-    logger.info("end; fitting. iternum:%d, relative dif of F: %e" % (itercount, relative_dif))
-
-
-    return y_k, SOLVED_FLAG_DONE
-
-
-
-def adam(init_model, loss_f, grad_f, alpha = 0.001, beta_1 = 0.9, beta_2 = 0.999, epsilon = 1e-10, iter_max = 1000, *args):
-
-    M_prev = np.zeros(np.shape(init_model))
-    R_prev = np.zeros(np.shape(init_model))
-    model_prev = init_model
-
-    for i in range(1, iter_max):
-        M = beta_1 * M_prev + ( 1-beta_1) * grad_f(model_prev)
-        R = beta_2 * R_prev + (1- beta_2) * grad_f(model_prev)**2
-        M_hat = M/(1- beta_1 ** i)
-        R_hat = R/(1-beta_2 **i)
-        model_prev = model_prev -alpha * M_hat/(np.sqrt(np.sum(R_hat**2)) + epsilon)
-    return model_prev
-
-
 
 def grad_check( grad_loss_numerical, graidient_function_arr, *args):
     (model_prior, model_prior2, vis_obs, l2_lambada, i_test, j_test) = args

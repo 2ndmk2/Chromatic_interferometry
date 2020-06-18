@@ -1,5 +1,0 @@
-2020-06-05 15:23:43,122 - INFO - <module>- Main part starts
-2020-06-05 15:23:47,772 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 0.000000e+00
-2020-06-05 15:23:51,829 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 7.223913e-15
-2020-06-05 15:23:55,914 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 6.712654e-13
-2020-06-05 15:24:00,018 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 5.415351e-11
