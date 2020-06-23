@@ -5,6 +5,7 @@ import datetime
 LOCAL_FLAG = True
 RESTART = True
 REPLACE_OBS = True
+REP_L2_FLAG = True
 
 ##
 XNUM, YNUM = 256, 256

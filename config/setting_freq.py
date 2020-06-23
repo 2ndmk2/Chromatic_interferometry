@@ -7,7 +7,7 @@ RESTART = True
 REPLACE_OBS = True
 
 ##
-XNUM, YNUM = 256, 256
+XNUM, YNUM = 64, 64
 DX, DY = 0.01, 0.01 ##arcsec
 
 

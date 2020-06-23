@@ -79,12 +79,13 @@ def main():
 		solver.grad_loss_l2, solver.zero_func, ETA_INIT, L_INIT, MAXITE, MINITE, positive_solve ,\
 		STOP_RATIO, restart_flag, vis_obs, model_prior, l2_lambda)
 
-	l2_lambda_arr = 10**np.linspace(-1,5,10)
-	"""
-	multiple_solver.l2_rep_solver(images, solver.loss_function_arr_l2, \
-		solver.grad_loss_l2, solver.zero_func, ETA_INIT, L_INIT, MAXITE, MINITE, positive_solve ,\
-		STOP_RATIO, input_model,dirty_image, beam_func, RESTART ,"../result/l2_rep","log.dat", vis_obs, model_prior, l2_lambda_arr)
-	"""
+
+	if REP_L2_FLAG:
+		l2_lambda_arr = 10**np.linspace(-1,5,10)
+
+		multiple_solver.l2_rep_solver(images, solver.loss_function_arr_l2, \
+			solver.grad_loss_l2, solver.zero_func, ETA_INIT, L_INIT, MAXITE, MINITE, positive_solve ,\
+			STOP_RATIO, input_model,dirty_image, beam_func, RESTART ,"../result/l2_rep","log.dat", vis_obs, model_prior, l2_lambda_arr)
 	
 	## TSV regluarzation + positive condition
 	ltsv_lambda = 1e3

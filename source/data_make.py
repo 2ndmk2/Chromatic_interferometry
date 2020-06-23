@@ -194,9 +194,9 @@ def spectral_power_model(nu_1, nu_0, xx, yy, beta_func = None):
     if beta_func is None:
         spectral_indices = (nu_1/nu_0)**(3 * np.ones(np.shape(xx)))
     else:
-        spectral_indices= (nu_1/nu_0)**(beta_func(xx, yy))
+        spectral_indices = (nu_1/nu_0)** (beta_func(xx, yy))
 
-    return spectal_indices
+    return spectral_indices 
 
 
 
@@ -208,9 +208,10 @@ def ring_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = [], 
     args = (width, r_main)
     r = (xx**2 + yy**2) **0.5
     image_nu0 = function(r, *args)
-
     images_freqs = []
+
     for nu_dmy in nu_arr:
+        print(nu_dmy/nu0)
         images_freqs.append(image_nu0 * spectral_power_model(nu_dmy, nu0, xx, yy, spectral_beta_func))
 
     return images_freqs, xx, yy
@@ -218,9 +219,10 @@ def ring_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = [], 
 
 class observatory_mfreq(observatory):
 
-    def __init__(self, images, obs_num, period, sn, duration, n_pos, radius, target_elevation, lambda_arr, save_folder):
+    def __init__(self, images, obs_num, period, sn, duration, n_pos, radius, target_elevation, lambda_arr, lambda0, save_folder):
         super().__init__(images, obs_num, period, sn, duration, n_pos, radius, target_elevation, save_folder)
-        self.lambda_arr = nu_arr
+        self.lambda_arr = lambda_arr
+        self.lambda0 = lambda0
 
     def time_observation(self,  dim=3, radius = 6000):
         position_obs = self.antn
@@ -232,12 +234,14 @@ class observatory_mfreq(observatory):
         
         e_u, e_v = self.e_unit_set(self.target_elevation[0], self.target_elevation[1])
 
-        for lambda_dmy in lambda_arr:
+        for lambda_dmy in self.lambda_arr:
+            pos_time_dmy = []
             for i in range(n_obs):
                 pos_now = position_obs[i]/lambda_dmy
-                pos_time.append([pos_now[0] * C_time - pos_now[1] * S_time, pos_now[0] * S_time + pos_now[1] * C_time, \
+                pos_time_dmy.append([pos_now[0] * C_time - pos_now[1] * S_time, pos_now[0] * S_time + pos_now[1] * C_time, \
                                 pos_now[2] * np.ones(len(time_arr))])
-        
+            pos_time.append(pos_time_dmy)
+
         pos_time = np.array(pos_time)
         n_freq, n_obs, n_pos, n_time = np.shape(pos_time)
         uv_arr_freq = []
@@ -250,8 +254,9 @@ class observatory_mfreq(observatory):
                         if j != k:
                             d_pos = pos_time_i[j] - pos_time_i[k]
                             uv_arr.append([np.dot(d_pos, e_u), np.dot(d_pos, e_v)] )
-            uv_arr_freq.append(uv_arr)
+            uv_arr_freq.append(np.array(uv_arr).T)
         uv_arr_freq = np.array(uv_arr_freq)
+        print(np.shape(uv_arr_freq))
         return uv_arr_freq
 
 
@@ -259,11 +264,14 @@ class observatory_mfreq(observatory):
         
         nfreq, x_len, y_len = np.shape(self.images)
         fft_images = []
+        nu_arr = 1/self.lambda_arr
+        nu0 = 1/self.lambda0
+
         for i in range(nfreq):
-            fft_images.append(np.fft.fftshift(np.fft.fft2(self.images)))
-        fft_images = np.array(ffet_images)
-        
-        uv_arr_freq = self.time_observation().T
+            fft_images.append(np.fft.fftshift(np.fft.fft2(self.images[i])))
+        fft_images = np.array(fft_images)
+
+        uv_arr_freq = self.time_observation()
         u_max = 0.5/dx
         v_max = 0.5/dy
         du = 1/(dx * x_len)
@@ -280,7 +288,7 @@ class observatory_mfreq(observatory):
         for i_freq in range(nfreq):
             fig = plt.figure(figsize = (12,12))
             ax = fig.add_subplot(111)        
-            num_mat = ax.hist2d(uv_arr[i_freq][0],uv_arr[i_freq][1], bins=[ for_bins_u, for_bins_v], cmap=cm.jet)
+            num_mat = ax.hist2d(uv_arr_freq[i_freq][0],uv_arr_freq[i_freq][1], bins=[ for_bins_u, for_bins_v], cmap=cm.jet)
             num_mat = num_mat[0]
             plt.close()
             
