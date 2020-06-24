@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import matplotlib as mpl
-mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import os
@@ -172,7 +171,7 @@ class observatory:
         vis = np.zeros(np.shape(fft_now), dtype=np.complex)
         fig = plt.figure(figsize = (12,12))
         ax = fig.add_subplot(111)        
-        num_mat= ax.hist2d(uv_arr[0],uv_arr[1], bins=[ for_bins_u, for_bins_v], cmap=cm.jet)
+        num_mat= ax.hist2d(uv_arr[0],uv_arr[1], bins=[for_bins_u, for_bins_v], cmap=cm.jet)
         num_mat = num_mat[0]
         plt.close()
         
@@ -211,7 +210,6 @@ def ring_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = [], 
     images_freqs = []
 
     for nu_dmy in nu_arr:
-        print(nu_dmy/nu0)
         images_freqs.append(image_nu0 * spectral_power_model(nu_dmy, nu0, xx, yy, spectral_beta_func))
 
     return images_freqs, xx, yy
@@ -225,13 +223,14 @@ class observatory_mfreq(observatory):
         self.lambda0 = lambda0
 
     def time_observation(self,  dim=3, radius = 6000):
+
         position_obs = self.antn
         time_arr = np.linspace(0, self.duration, self.obs_num)
         C_time = np.cos( time_arr * 2 * np.pi/ self.period)
         S_time = np.sin( time_arr * 2 * np.pi/ self.period)
         n_obs, n_pos = np.shape(position_obs )
+
         pos_time = []
-        
         e_u, e_v = self.e_unit_set(self.target_elevation[0], self.target_elevation[1])
 
         for lambda_dmy in self.lambda_arr:
@@ -256,7 +255,7 @@ class observatory_mfreq(observatory):
                             uv_arr.append([np.dot(d_pos, e_u), np.dot(d_pos, e_v)] )
             uv_arr_freq.append(np.array(uv_arr).T)
         uv_arr_freq = np.array(uv_arr_freq)
-        print(np.shape(uv_arr_freq))
+
         return uv_arr_freq
 
 
@@ -300,7 +299,7 @@ class observatory_mfreq(observatory):
                         vis_freq[i_freq][i][j] = real_noise + imag_noise * 1j
             vis_freq[i_freq] = np.fft.ifftshift(vis_freq[i_freq])
             num_mat_freq.append(np.fft.ifftshift(num_mat))
-        num_mat_freq = np.array(num_mat)
 
+        num_mat_freq = np.array(num_mat_freq)
         return vis_freq, num_mat_freq, fft_images
 

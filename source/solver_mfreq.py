@@ -1,5 +1,4 @@
 import numpy as np
-
 import matplotlib.pyplot as plt
 import logging 
 import os 
@@ -12,7 +11,6 @@ from pathlib import Path
 rootdir = Path().resolve()
 sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../config')))
 from setting_freq import *
-
 import matplotlib as mpl
 if not LOCAL_FLAG:
     mpl.use('Agg')
@@ -342,7 +340,7 @@ def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, 
         f_grad_yk = grad_f(y_k, *args)
         loss_f_yk = loss_f(y_k, *args)
         L = L/eta
-        print(itercount, tk)
+        #print(itercount, tk)
         while(1):
             logger.debug("itercount: %d, L: %e, eta:%e, tk%f" % (itercount, L, eta, tk))
 
@@ -578,8 +576,8 @@ def multi_freq_chi2_grad(x_vec, obs, nu_arr, nu0):
         sj_model = (nu_arr[i_freq]/nu0)**model_beta 
         model_freqj_for_dbeta = np.log(nu_arr[i_freq]/nu0) * ((nu_arr[i_freq]/nu0)**model_beta ) * model_image
 
-        d_chi_d_beta  += - np.real(2 *model_freqj_for_dbeta * ifft_d_vis)
-        d_chi_d_I  += - np.real(2 *sj_model * ifft_d_vis )
+        d_chi_d_beta  += np.real(2 *model_freqj_for_dbeta * ifft_d_vis)
+        d_chi_d_I  += np.real(2 *sj_model * ifft_d_vis )
 
     return x_to_I_beta([d_chi_d_I, d_chi_d_beta], reverse = True)
 
@@ -614,6 +612,8 @@ def multi_freq_cost_l1_tsv(x_vec, *args):
     
     return chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image)
 
+
+
 def grad_mfreq_numerical(x_vec, *args):
 
     obs, nu_arr, nu0, lambda1, lambda2 = args
@@ -637,8 +637,6 @@ def grad_mfreq_numerical(x_vec, *args):
 
 
 
-
-
 def solver_mfreq(f, f_grad, x_init, bounds, obs, nu_arr, n0, lambda1, lambda2):
 
     args = (obs, nu_arr, n0, lambda1, lambda2)
@@ -648,6 +646,50 @@ def solver_mfreq(f, f_grad, x_init, bounds, obs, nu_arr, n0, lambda1, lambda2):
         result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime =  f_grad, bounds = bounds)
     return result
 
+
+def solver_mfreq_independent(loss, grad, l1_func, vis_obs,  nu_arr, n0, l1_lambda, l2_lambda, positive_solve =True, percentile = 10):
+
+    nfreq, nx, ny = np.shape(vis_obs)
+    model_freqs = np.zeros((nfreq, XNUM, YNUM))
+    for i in range(nfreq):
+        init_model = np.zeros((XNUM, YNUM))
+        image, solved = fx_L1_mfista(init_model, loss, 
+            grad, l1_func, ETA_INIT, L_INIT, MAXITE, MINITE, positive_solve ,\
+            STOP_RATIO,RESTART, vis_obs[i], l1_lambda, l2_lambda)
+        print(np.shape(image))
+        print(np.shape(model_freqs))
+        model_freqs[i] = image
+
+    freq_log = np.log(nu_arr/n0)
+    beta = np.zeros((XNUM, YNUM))
+    image_0 = np.zeros((XNUM, YNUM))
+    max_emission = np.max(model_freqs)
+
+
+    sum_flux = np.sum(model_freqs, axis=(1,2))
+    beta_rough_est, beta_rough_flux = np.polyfit(freq_log, np.log(sum_flux), 1)
+
+
+    for i in range(XNUM):
+        for j in range(YNUM):
+            int_freq = model_freqs[:,i,j]
+
+            if int_freq.prod() > 0:
+
+                b, a = np.polyfit(freq_log, np.log(int_freq), 1)
+
+                ## Remove Unrealsitic high I_0
+                if np.exp(a) > 1 * max_emission:
+                    continue
+                image_0[i,j] = np.exp(a)
+                if b > 2 * beta_rough_est:
+                    b= beta_rough_est
+                if b<0:
+                    b = 0
+                beta[i,j] = b
+                #print(int_freq, np.exp(a), b)
+
+    return image_0, beta, model_freqs
 
 
 

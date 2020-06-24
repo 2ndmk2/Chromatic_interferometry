@@ -7,7 +7,7 @@ RESTART = True
 REPLACE_OBS = True
 
 ##
-XNUM, YNUM = 64, 64
+XNUM, YNUM = 128, 128
 DX, DY = 0.01, 0.01 ##arcsec
 
 
@@ -20,7 +20,7 @@ WIDTH_RING  = 0.02   ## arcsec
 PERIOD = 24 ## hrs
 NDATA= 30 
 OBS_DUR = 2 ##hrs
-N_ANTE = 10 ##num of antennas
+N_ANTE = 20 ##num of antennas
 SN = 5
 LAMBDA_mm= 1#mm
 ARCSEC_TO_RAD= 1/206265

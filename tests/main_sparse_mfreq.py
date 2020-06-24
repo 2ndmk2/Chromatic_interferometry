@@ -15,13 +15,11 @@ from setting_freq import *
 
 import data_make 
 import matplotlib as mpl
-mpl.use('Agg')
 
 import numpy as np
 import matplotlib.pyplot as plt
 import solver_mfreq as s_freq
 import plot_make 
-
 
 def main():
 
