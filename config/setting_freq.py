@@ -7,7 +7,7 @@ RESTART = True
 REPLACE_OBS = True
 
 ##
-XNUM, YNUM = 128, 128
+XNUM, YNUM = 64, 64
 DX, DY = 0.01, 0.01 ##arcsec
 
 
@@ -24,7 +24,7 @@ N_ANTE = 20 ##num of antennas
 SN = 5
 LAMBDA_mm= 1#mm
 ARCSEC_TO_RAD= 1/206265
-RADIUS_OBS = 1.5 ##sphere radius /km
+RADIUS_OBS = 2.5 ##sphere radius /km
 RADIUS_OBS_MM = RADIUS_OBS   * 1000 * 1000 # mm
 BASELINE_UVMAX = RADIUS_OBS_MM  * ARCSEC_TO_RAD# /LAMBDA_mm ##
 

@@ -25,17 +25,17 @@ N_ANTE = 10 ##num of antennas
 SN = 5
 LAMBDA_mm= 1#mm
 ARCSEC_TO_RAD= 1/206265
-RADIUS_OBS = 1.5 ##sphere radius /km
+RADIUS_OBS = 2.5 ##sphere radius /km
 RADIUS_OBS_MM = RADIUS_OBS   * 1000 * 1000 # mm
 BASELINE_UVMAX = RADIUS_OBS_MM  * ARCSEC_TO_RAD /LAMBDA_mm ##
 
 
 ##
 STOP_RATIO = 1e-7
-MINITE = 50
-MAXITE = 100
+MINITE = 300
+MAXITE = 500
 ETA_INIT = 1.1
-L_INIT = 1e-4
+L_INIT = 1e2
 MAX_L = 1e15
 ETA_MIN= 1.09
 

@@ -6,7 +6,6 @@ import matplotlib.cm as cm
 import os
 
 
-
 def make_dir(dirName):
     try:
     # Create target Directory
@@ -38,8 +37,6 @@ def gauss_make(x_len, y_len, x_lim, y_lim, function = gaussian_function_1d, args
     xx, yy= np.meshgrid(x, y, indexing='ij')
     return function(xx, yy, *args), xx, yy
 
-
-
 def coordinate_make(x_len, y_len, dx, dy):
     x = np.arange(0,x_len * dx, dx)
     y = np.arange(0,y_len * dy, dy)
@@ -52,23 +49,73 @@ def ring_make(x_len, y_len, dx, dy, r_main, width, function = gaussian_function_
     
     
     xx, yy = coordinate_make(x_len, y_len, dx, dy)
-
     args = (width, r_main)
     r = (xx**2 + yy**2) **0.5
+    
     return function(r, *args), xx, yy
 
 
 def gauss_2d(mu, mu2, sigma):
+    
     x = random.gauss(mu, sigma)
     y = random.gauss(mu2, sigma)
+    
     return (x, y)
 
 
+## A
+def convert_visdash_to_vis(vis, dx, dy):
+
+    x_len, y_len = np.shape(vis)
+    x = np.arange(x_len)
+    y = np.arange(y_len)
+    xx, yy = np.meshgrid(x,y)
+    phase_factor = np.exp( (float(x_len-1)/float(x_len)) * np.pi*1j* (xx + yy))
+    phase_factor2 = np.exp(-np.pi*1j* (float((x_len-1)**2/float(x_len))))
+    
+    return dx * dy * phase_factor * phase_factor2 
+
+
+## A^-1
+def convert_vis_to_visdash(vis, dx, dy):
+
+    x_len, y_len = np.shape(vis)
+    x = np.arange(x_len)
+    y = np.arange(y_len)
+    xx, yy = np.meshgrid(x,y)
+    phase_factor = np.exp( - (float(x_len-1)/float(x_len)) * np.pi*1j* (xx + yy))
+    phase_factor2 = np.exp(np.pi*1j* (float((x_len-1)**2/float(x_len))))
+
+    return (1/dx) * (1/dy) * phase_factor * phase_factor2 
+
+## B
+def convert_Idash_to_Idashdash(image):
+
+    x_len, y_len = np.shape(image)
+    x = np.arange(x_len)
+    y = np.arange(y_len)
+    xx, yy = np.meshgrid(x,y)
+    phase_factor = np.exp((float(x_len-1)/float(x_len)) * np.pi*1j* (xx + yy))
+
+    return phase_factor 
+
+## B^-1
+def convert_Idashdash_to_Idash(image):
+
+    x_len, y_len = np.shape(image)
+    x = np.arange(x_len)
+    y = np.arange(y_len)
+    xx, yy = np.meshgrid(x,y)
+    phase_factor = np.exp(-(float(x_len-1)/float(x_len)) *np.pi*1j* (xx + yy))
+
+    return phase_factor 
 
 
 class observatory:
 
-    def __init__(self, images, obs_num, period, sn, duration, n_pos, radius, target_elevation, save_folder):
+    def __init__(self, images, obs_num, period, sn, duration, n_pos, \
+        radius, target_elevation, save_folder):
+        
         self.images = images
         self.obs_num =obs_num
         self.period = period
@@ -97,6 +144,7 @@ class observatory:
         self.antn =   self.radius * np.array(posi_obs)
 
     def e_unit_set(self, z_theta, y_theta):
+
         C_z, S_z = np.cos(z_theta), np.sin(z_theta)
         C_y, S_y = np.cos(y_theta), np.sin(y_theta)
         R_z = np.array([[C_z,-S_z,0],[S_z, C_z,0],[0,0,1]])
@@ -104,12 +152,12 @@ class observatory:
         R = np.dot(R_z, R_y)
         e_y = np.array([0,1,0])
         e_x = np.array([1,0,0])
-        #e_z = (Cz Sy, Sz Sy, Cy)
         return np.dot(R, e_x), np.dot(R, e_y)
 
 
 
     def time_observation(self,  dim=3, radius = 6000):
+
         position_obs = self.antn
         time_arr = np.linspace(0, self.duration, self.obs_num)
         C_time = np.cos( time_arr * 2 * np.pi/ self.period)
@@ -151,14 +199,15 @@ class observatory:
         
         
     def obs_make(self, dx, dy, sn):
-        
-        fft_now = np.fft.fft2(self.images)
-        fft_now = np.fft.fftshift(fft_now)
+
+
+        image_dashdash = convert_Idash_to_Idashdash(self.images) * self.images
+        fft_before_shift = np.fft.fft2(image_dashdash)
+        fft_after_shift = convert_visdash_to_vis(fft_before_shift, dx, dy) * fft_before_shift
         
         uv_arr = self.time_observation().T
         x_len, y_len = np.shape(self.images)
-        u_max = 0.5/dx
-        v_max = 0.5/dy
+        
         du = 1/(dx * x_len)
         dv = 1/(dx * y_len)
         u = np.arange(0,x_len * du, du)
@@ -168,20 +217,29 @@ class observatory:
         for_bins_u = np.append(u_shift, np.max(u_shift)+du) - du/2
         for_bins_v = np.append(v_shift, np.max(v_shift)+dv) - dv/2
         
-        vis = np.zeros(np.shape(fft_now), dtype=np.complex)
+        vis = np.zeros(np.shape(fft_after_shift), dtype=np.complex)
+        noise = np.zeros(np.shape(fft_after_shift), dtype=np.complex)
+
         fig = plt.figure(figsize = (12,12))
         ax = fig.add_subplot(111)        
         num_mat= ax.hist2d(uv_arr[0],uv_arr[1], bins=[for_bins_u, for_bins_v], cmap=cm.jet)
         num_mat = num_mat[0]
+        vis_amp_noise = np.max(np.abs(fft_after_shift))/float(np.sqrt(sn))
         plt.close()
+
         
         for i in range(x_len):
             for j in range(y_len):
+                
                 if num_mat[i][j] !=0:
-                    real_now, imag_now = fft_now[i,j].real,  fft_now[i,j].imag
-                    real_noise, imag_noise = gauss_2d(real_now, imag_now, (((real_now**2 + imag_now**2)**0.5)/(sn * num_mat[i][j])**0.5))
+                    noise_amp = vis_amp_noise/np.sqrt(num_mat[i][j])
+                    real_now, imag_now = fft_after_shift[i,j].real,  fft_after_shift[i,j].imag
+                    real_noise, imag_noise = gauss_2d(real_now, imag_now, noise_amp)
                     vis[i][j] = real_noise + imag_noise * 1j
-        return np.fft.ifftshift(vis), np.fft.ifftshift(num_mat), fft_now
+                    noise[i][j] = noise_amp
+
+        noise[noise ==0] = 1
+        return vis, num_mat, fft_after_shift, noise
 
                 
 
@@ -267,12 +325,16 @@ class observatory_mfreq(observatory):
         nu0 = 1/self.lambda0
 
         for i in range(nfreq):
-            fft_images.append(np.fft.fftshift(np.fft.fft2(self.images[i])))
+
+            image_dashdash = convert_Idash_to_Idashdash(self.images[i]) * self.images[i]
+            fft_before_shift = np.fft.fft2(image_dashdash)
+            fft_after_shift = convert_visdash_to_vis(fft_before_shift, dx, dy) * fft_before_shift
+            fft_images.append(fft_after_shift)
+
         fft_images = np.array(fft_images)
 
         uv_arr_freq = self.time_observation()
-        u_max = 0.5/dx
-        v_max = 0.5/dy
+
         du = 1/(dx * x_len)
         dv = 1/(dx * y_len)
         u = np.arange(0,x_len * du, du)
@@ -283,23 +345,29 @@ class observatory_mfreq(observatory):
         for_bins_v = np.append(v_shift, np.max(v_shift)+dv) - dv/2
         
         vis_freq = np.zeros((nfreq, x_len, y_len), dtype=np.complex)
+        noise_freq = np.zeros((nfreq, x_len, y_len), dtype=np.complex)
         num_mat_freq = []
+
         for i_freq in range(nfreq):
+
             fig = plt.figure(figsize = (12,12))
             ax = fig.add_subplot(111)        
             num_mat = ax.hist2d(uv_arr_freq[i_freq][0],uv_arr_freq[i_freq][1], bins=[ for_bins_u, for_bins_v], cmap=cm.jet)
             num_mat = num_mat[0]
+            num_mat_freq.append(num_mat)
             plt.close()
-            
+            vis_amp_noise =  np.max(np.abs(fft_images[i_freq]))/float(np.sqrt(sn))
+
             for i in range(x_len):
                 for j in range(y_len):
                     if num_mat[i][j] !=0:
+                        noise_amp = vis_amp_noise/np.sqrt(num_mat[i][j])
                         real_now, imag_now = fft_images[i_freq, i,j].real, fft_images[i_freq, i,j].imag
-                        real_noise, imag_noise = gauss_2d(real_now, imag_now, (((real_now**2 + imag_now**2)**0.5)/(sn * num_mat[i][j])**0.5))
+                        real_noise, imag_noise = gauss_2d(real_now, imag_now, noise_amp)
                         vis_freq[i_freq][i][j] = real_noise + imag_noise * 1j
-            vis_freq[i_freq] = np.fft.ifftshift(vis_freq[i_freq])
-            num_mat_freq.append(np.fft.ifftshift(num_mat))
-
+                        noise_freq[i_freq][i][j] = noise_amp
+  
+        noise_freq[noise_freq ==0] = 1
         num_mat_freq = np.array(num_mat_freq)
-        return vis_freq, num_mat_freq, fft_images
+        return vis_freq, num_mat_freq, fft_images, noise_freq
 
