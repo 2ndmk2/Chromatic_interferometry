@@ -7,24 +7,28 @@ RESTART = True
 REPLACE_OBS = True
 
 ##
-XNUM, YNUM = 64, 64
+XNUM, YNUM = 128, 128
 DX, DY = 0.01, 0.01 ##arcsec
 
 
-##
-RAD_RING = 0.03  ##arcsec
-WIDTH_RING  = 0.02   ## arcsec
+##base image
+RAD_RING = 0.08  ##arcsec
+WIDTH_RING  = 0.03   ## arcsec
+##beta func
+RAD_RING_BETA = 0.05  ##arcsec
+WIDTH_RING_BETA = 0.09   ## arcsec
+
 
 
 ## 
 PERIOD = 24 ## hrs
 NDATA= 30 
 OBS_DUR = 2 ##hrs
-N_ANTE = 20 ##num of antennas
+N_ANTE = 10 ##num of antennas
 SN = 5
 LAMBDA_mm= 1#mm
 ARCSEC_TO_RAD= 1/206265
-RADIUS_OBS = 2.5 ##sphere radius /km
+RADIUS_OBS = 1.0 ##sphere radius /km
 RADIUS_OBS_MM = RADIUS_OBS   * 1000 * 1000 # mm
 BASELINE_UVMAX = RADIUS_OBS_MM  * ARCSEC_TO_RAD# /LAMBDA_mm ##
 

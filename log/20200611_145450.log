@@ -1,4 +1,0 @@
-2020-06-11 14:54:50,502 - INFO - <module>- Main part starts
-2020-06-11 14:54:52,679 - DEBUG - only_fx_mfista- iternum:50, L: 8.726096e+04, F_xk: 7.237574e+00, chi:5.828656e+06, reg: 1.145254e+07, rela_err:6.724344e-09
-2020-06-11 14:54:53,593 - DEBUG - only_fx_mfista- iternum:100, L: 7.932815e+04, F_xk: 7.237574e+00, chi:5.828603e+06, reg: 1.145259e+07, rela_err:2.187749e-11
-2020-06-11 14:54:53,725 - INFO - only_fx_mfista- end; fitting. iternum:100, relative dif of F: 1.820517e-11

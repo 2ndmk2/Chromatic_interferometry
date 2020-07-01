@@ -597,7 +597,7 @@ def x_to_I_beta(x_vec,reverse = False):
 def multi_freq_grad(x_vec, *args):
 
     ## Load
-    obs, noise, nu_arr, nu0, lambda1, lambda2 = args 
+    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2  = args 
     n_freq = len(nu_arr)
     model_image, model_beta= x_to_I_beta(x_vec)
     nx, ny = np.shape(model_image)
@@ -605,7 +605,10 @@ def multi_freq_grad(x_vec, *args):
     ## Main
     d_TSV_I = lambda2 * d_TSV(model_image)
     d_L1_norm_I = lambda1 * d_L1_norm(model_image)
-    d_beta_reg = np.zeros(np.shape(model_image))
+    if lambda_beta_2 is None:
+        d_beta_reg = np.zeros(np.shape(d_L1_norm_I))
+    else:
+        d_beta_reg = lambda_beta_2 * d_TSV(model_beta)
     d_reg_sum = x_to_I_beta([d_L1_norm_I  + d_TSV_I, d_beta_reg], reverse = True)
     d_chi_sum = multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0)
 
@@ -632,7 +635,7 @@ def multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0):
         d_vis = (obs[i_freq] - model_vis )/noise[i_freq]
         d_vis[obs_mask] = 0
 
-        d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis, DX, DY)) * d_vis
+        d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis, DX, DY)) * d_vis/noise[i_freq]
         ifft_A_d_vis = nx * ny*  np.fft.ifft2(d_vis)
         B_ifft_A_F = np.conjugate(data_make.convert_Idash_to_Idashdash(ifft_A_d_vis)) * ifft_A_d_vis
 
@@ -674,17 +677,17 @@ def multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0):
 
 def multi_freq_cost_l1_tsv(x_vec, *args):
 
-    obs, noise, nu_arr, nu0, lambda1, lambda2 = args
+    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2 = args
     model_image, model_beta = x_to_I_beta(x_vec)
     chi2 = multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0)
     
-    return chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image)
+    return chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image) + lambda_beta_2 * TSV(model_beta)
 
 
 
 def grad_mfreq_numerical(x_vec,  *args):
 
-    obs, noise, nu_arr, nu0, lambda1, lambda2 = args
+    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2 = args
     delta = 1e-5
     model_image, model_beta = x_to_I_beta(x_vec)
     chi2 = multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0)
@@ -692,20 +695,19 @@ def grad_mfreq_numerical(x_vec,  *args):
     num_grad = np.ones(len(x_vec))
 
     for i in range(len(x_vec)):
-        x_vec_delta = x_vec
+        x_vec_delta = np.copy(x_vec)
         x_vec_delta[i] += delta
         model_image, model_beta = x_to_I_beta(x_vec_delta)
         chi2 = multi_freq_chi2(x_vec_delta, obs, noise, nu_arr, nu0)
         chi_sum_delta = chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image)
         num_grad[i] = (chi_sum_delta - chi_sum)/delta 
-        x_vec_delta[i] -= delta
 
     return num_grad 
 
 
-def solver_mfreq(f, f_grad, x_init, bounds, obs, noise, nu_arr, n0, lambda1, lambda2):
+def solver_mfreq(f, f_grad, x_init, bounds, obs, noise, nu_arr, n0, lambda1, lambda2, lambda_beta_2):
 
-    args = (obs, noise, nu_arr, n0, lambda1, lambda2)
+    args = (obs, noise, nu_arr, n0, lambda1, lambda2, lambda_beta_2)
     if f_grad == None:
         result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = None, approx_grad = True,  bounds = bounds)
     else:
