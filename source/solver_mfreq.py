@@ -594,7 +594,21 @@ def x_to_I_beta(x_vec,reverse = False):
 
     return model_image, model_beta
 
+def call_back(x_vec):
+    beta_to_zero_w_I(x_vec)
+    print(len(x_vec==0))
+
+
+def beta_to_zero_w_I(x_vec):
+
+    N = int(len(x_vec)/2)
+    x_vec[N:2 * N][x_vec[0:N] ==0] = 0
+
+    return None
+
 def multi_freq_grad(x_vec, *args):
+
+    beta_to_zero_w_I(x_vec)
 
     ## Load
     obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2  = args 
@@ -605,6 +619,8 @@ def multi_freq_grad(x_vec, *args):
     ## Main
     d_TSV_I = lambda2 * d_TSV(model_image)
     d_L1_norm_I = lambda1 * d_L1_norm(model_image)
+
+    model_beta[model_image ==0] = 0
     if lambda_beta_2 is None:
         d_beta_reg = np.zeros(np.shape(d_L1_norm_I))
     else:
@@ -622,6 +638,7 @@ def multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0):
     nx, ny = np.shape(model_image)
     d_chi_d_I = np.zeros(np.shape(model_image))
     d_chi_d_beta = np.zeros(np.shape(model_image))
+
 
     ## Main
     for i_freq in range(n_freq):
@@ -656,7 +673,7 @@ def multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0):
     model_image, model_beta= x_to_I_beta(x_vec)
     nx, ny = np.shape(model_image)
     chi_sum = 0
-
+    model_beta[model_image ==0] = 0
 
     ## Main
     for i_freq in range(n_freq):
@@ -677,9 +694,11 @@ def multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0):
 
 def multi_freq_cost_l1_tsv(x_vec, *args):
 
+    beta_to_zero_w_I(x_vec)
     obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2 = args
     model_image, model_beta = x_to_I_beta(x_vec)
     chi2 = multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0)
+    model_beta[model_image ==0] = 0
     
     return chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image) + lambda_beta_2 * TSV(model_beta)
 
@@ -705,13 +724,15 @@ def grad_mfreq_numerical(x_vec,  *args):
     return num_grad 
 
 
-def solver_mfreq(f, f_grad, x_init, bounds, obs, noise, nu_arr, n0, lambda1, lambda2, lambda_beta_2):
+def solver_mfreq(f, f_grad, x_init, bounds, obs, noise, nu_arr, n0, lambda1, lambda2, lambda_beta_2, maxiter = 15000, factr = 10000000.0, call_back = call_back):
 
     args = (obs, noise, nu_arr, n0, lambda1, lambda2, lambda_beta_2)
     if f_grad == None:
-        result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = None, approx_grad = True,  bounds = bounds)
+        result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = None,\
+         approx_grad = True,  bounds = bounds, maxiter = maxiter, factr = factr, callback = call_back)
     else:
-        result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = f_grad, bounds = bounds)
+        result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = f_grad, \
+            bounds = bounds, maxiter = maxiter, factr = factr, callback = call_back, )
     return result
 
 

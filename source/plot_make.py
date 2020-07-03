@@ -20,7 +20,7 @@ import matplotlib as mpl
 if not LOCAL_FLAG:
     mpl.use('Agg')
 
-def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None):
+def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None, file_name = "image"):
 
 
     ## if args is array form
@@ -42,7 +42,10 @@ def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None):
         axs[i_args_div, i_args_mod].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
 
     if save_folder !=None:
-        plt.savefig(os.path.join(save_folder, "image.pdf"), bbox_inches='tight')
+        if not os.path.exists(save_folder):
+            os.makedirs(save_folder)
+
+        plt.savefig(os.path.join(save_folder, "%s.pdf" % file_name), bbox_inches='tight')
         plt.close()
     else:
         plt.show()

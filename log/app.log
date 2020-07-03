@@ -1,0 +1,14 @@
+2020-07-03 15:58:40,351|INFO    |plot_make|plots_comp|0 model, rms:5.001600e+01
+2020-07-03 15:58:40,382|INFO    |plot_make|plots_comp|1 model, rms:1.369717e+01
+2020-07-03 15:58:40,420|INFO    |plot_make|plots_comp|2 model, rms:2.042416e-15
+2020-07-03 15:58:40,453|INFO    |plot_make|plots_comp|3 model, rms:0.000000e+00
+2020-07-03 15:58:42,713|INFO    |plot_make|plots_comp|0 model, rms:7.168929e+00
+2020-07-03 15:58:42,749|INFO    |plot_make|plots_comp|1 model, rms:0.000000e+00
+2020-07-03 15:58:44,881|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:50, relative dif of F: 0.000000e+00
+2020-07-03 15:58:46,261|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:52, relative dif of F: 9.055679e-08
+2020-07-03 15:58:48,208|INFO    |plot_make|plots_comp|0 model, rms:5.817189e+01
+2020-07-03 15:58:48,240|INFO    |plot_make|plots_comp|1 model, rms:2.844931e+01
+2020-07-03 15:58:48,276|INFO    |plot_make|plots_comp|2 model, rms:3.519724e+01
+2020-07-03 15:58:48,308|INFO    |plot_make|plots_comp|3 model, rms:0.000000e+00
+2020-07-03 15:59:02,930|INFO    |plot_make|plots_comp|0 model, rms:1.238200e+00
+2020-07-03 15:59:02,964|INFO    |plot_make|plots_comp|1 model, rms:0.000000e+00

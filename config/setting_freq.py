@@ -5,6 +5,8 @@ import datetime
 LOCAL_FLAG = True
 RESTART = True
 REPLACE_OBS = True
+GRAD_CONF = False 
+PLOT_INPUT= True
 
 ##
 XNUM, YNUM = 128, 128
