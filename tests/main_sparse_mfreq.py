@@ -93,11 +93,15 @@ if PLOT_INPUT:
     beta_calc = np.log(image_nu0/image_nu1)/np.log(nu_arr[0]/nu_arr[1])
     flag = (np.isfinite(beta_calc) !=True)
     beta_calc[flag] = 0
-    plot_make.plots_comp([image_nu0, image_nu1, beta_calc, beta_func(xx, yy)], width_im = 50,\
+    images = [image_nu0, image_nu1, beta_calc, beta_func(xx, yy)]
+    titles = ["image nu0","image nu1", "beta_calc", "beta"]
+    plot_make.plots_parallel(images,titles, width_im = 50,\
      save_folder = save_fig, file_name = "input_image")
 
     nx, ny = np.shape(image_nu0)
-    plot_make.plots_comp([fft_now[0].real, num_mat[0]], width_im = int( (nx-1)/2), \
+    images = [fft_now[0].real, num_mat[0]]
+    titles = ["vis model", "vis obs"]
+    plot_make.plots_parallel(images, titles, width_im = int( (nx-1)/2), \
     	save_folder = save_fig, file_name = "vis_input")
 
     
@@ -120,7 +124,9 @@ image_I0, beta,  model_freqs = s_freq.solver_mfreq_independent(s_freq.loss_funct
     
 #plot indepenet images 
 
-plot_make.plots_comp([model_freqs[0], model_freqs[1], image_I0, beta], \
+images = [model_freqs[0], model_freqs[1], image_I0, beta]
+titles = ["Estimagenu0 ind", "Estimagenu1 ind", "EstI0 ind", "Estbeta ind"]
+plot_make.plots_parallel(images,titles, \
 	width_im = 50, save_folder = save_fig, file_name = "mfreq_ind_image")
 
 
@@ -137,17 +143,18 @@ if GRAD_CONF:
 ## Grad Check for chromatic case
 
 if GRAD_CONF:
-
     result = s_freq.grad_mfreq_numerical( model_init,  vis_obs, noise ,nu_arr, nu0, lambda_l1, lambda_ltsv) 
     grad_2 = s_freq.multi_freq_grad( model_init,  vis_obs, noise ,nu_arr, nu0, lambda_l1, lambda_ltsv) 
     plt.scatter(result, grad_2)
 
  ## Solver for chromatic case
 
-reg_para = np.array([-0.5, -1.5, 1.5])*1
+reg_para = np.array([-0.5, -0.5, -0.5])
 lambda_l1 = 10**(reg_para[0])
 lambda_ltsv = 10**(reg_para[1])
 lambda_beta_ltsv =  10**(reg_para[2])
+beta_reg = "L2"
+beta_prior = np.zeros(np.shape(beta))
 
 
 ## set bounds for l_bfgs_b minimization
@@ -172,9 +179,12 @@ models_init = np.append(image_I0, np.ravel(beta))
 
 result = s_freq.solver_mfreq(f_cost,df_cost, model_init, bounds,  vis_obs, \
                              noise ,nu_arr, nu0, lambda_l1, \
-                             lambda_ltsv, lambda_beta_ltsv, maxiter = 200) 
+                             lambda_ltsv, lambda_beta_ltsv,beta_reg, beta_prior, maxiter = 200) 
 image, beta = s_freq.x_to_I_beta(result[0])
 np.savez('test', image=image, beta = beta)
 
-
-plot_make.plots_comp([image, beta], width_im = int( (nx-1)/2), save_folder = save_fig, file_name = "mfreq_image")
+beta[image==0] = 0
+print(len(image[image==0]))
+images = [image, beta]
+titles = ["EstI0", "Estbeta"]
+plot_make.plots_parallel(images, titles , width_im = int( (nx-1)/2), save_folder = save_fig, file_name = "mfreq_image")

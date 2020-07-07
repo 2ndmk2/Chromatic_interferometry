@@ -6,7 +6,8 @@ LOCAL_FLAG = True
 RESTART = True
 REPLACE_OBS = True
 GRAD_CONF = False 
-PLOT_INPUT= True
+PLOT_INPUT = True
+PLOT_SOLVE_CURVE = False
 
 ##
 XNUM, YNUM = 128, 128

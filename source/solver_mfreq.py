@@ -74,6 +74,7 @@ def loss_function_arr_l2(model, *args):
     d_vis[obs_mask] = 0
     return [np.sum(np.abs(d_vis)**2), lambda_l2 * np.sum((model-model_prior)**2)]
 
+
 def grad_loss_l2(model, *args):
     
     (obs, noise, model_prior, lambda_l2) = args
@@ -280,7 +281,8 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
     ## Loop for mfista
     itercount = 0
     F_xk_arr = []
-    fig, ax = plt.subplots()
+    if PLOT_SOLVE_CURVE:
+        fig, ax = plt.subplots()
     while(1):
         
 
@@ -327,9 +329,10 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
             relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
 
             if relative_dif < stop_ratio:
-                plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-                plt.savefig(FIG_FOLDER + "fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
-                plt.close()
+                if PLOT_SOLVE_CURVE:
+                    plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
+                    plt.savefig(FIG_FOLDER + "fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
+                    plt.close()
                 break
 
 
@@ -350,15 +353,17 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
 
             chi, l2 =loss_f_arr(x_k, *args)
             logger.debug("iternum:%d, L: %e, F_xk: %e, chi:%e, reg: %e, rela_err:%e"  % (itercount, L, np.log10(F_xk), chi, l2, np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])))
-            line, = ax.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-            plt.pause(0.01)
-            line.remove()
+            if PLOT_SOLVE_CURVE:
+                line, = ax.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
+                plt.pause(0.01)
+                line.remove()
 
 
         if itercount > iter_max:
-            plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-            plt.savefig(FIG_FOLDER + "fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
-            plt.close()
+            if PLOT_SOLVE_CURVE:
+                plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
+                plt.savefig(FIG_FOLDER + "fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
+                plt.close()
             break
     relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
     logger.info("end; fitting. iternum:%d, relative dif of F: %e" % (itercount, relative_dif))
@@ -390,7 +395,7 @@ def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, 
         ## loop for L
         f_grad_yk = grad_f(y_k, *args)
         loss_f_yk = loss_f(y_k, *args)
-        L = L/eta
+        L = L/eta 
         #print(itercount, tk)
         while(1):
             logger.debug("itercount: %d, L: %e, eta:%e, tk%f" % (itercount, L, eta, tk))
@@ -595,8 +600,8 @@ def x_to_I_beta(x_vec,reverse = False):
     return model_image, model_beta
 
 def call_back(x_vec):
-    beta_to_zero_w_I(x_vec)
-    print(len(x_vec==0))
+
+    return None
 
 
 def beta_to_zero_w_I(x_vec):
@@ -604,14 +609,21 @@ def beta_to_zero_w_I(x_vec):
     N = int(len(x_vec)/2)
     x_vec[N:2 * N][x_vec[0:N] ==0] = 0
 
-    return None
+    return x_vec
+
+def beta_to_zero_w_I_df(df_dx, image):
+
+    N = int(len(image)/2)
+    df_dx[N:2 * N][image[0:N] ==0] = 0
+
+    return df_dx
 
 def multi_freq_grad(x_vec, *args):
 
-    beta_to_zero_w_I(x_vec)
+    #x_vec = beta_to_zero_w_I(x_vec)
 
     ## Load
-    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2  = args 
+    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior  = args 
     n_freq = len(nu_arr)
     model_image, model_beta= x_to_I_beta(x_vec)
     nx, ny = np.shape(model_image)
@@ -623,12 +635,21 @@ def multi_freq_grad(x_vec, *args):
     model_beta[model_image ==0] = 0
     if lambda_beta_2 is None:
         d_beta_reg = np.zeros(np.shape(d_L1_norm_I))
-    else:
+
+    elif beta_reg == "TSV":
         d_beta_reg = lambda_beta_2 * d_TSV(model_beta)
+        #d_beta_reg[model_image==0] = 0
+
+    elif beta_reg == "L2":
+        d_beta_reg = 2 * lambda_beta_2 * (model_beta-beta_prior)
+        #d_beta_reg[model_image==0] = 0
+
     d_reg_sum = x_to_I_beta([d_L1_norm_I  + d_TSV_I, d_beta_reg], reverse = True)
     d_chi_sum = multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0)
+    d_tot = d_chi_sum + d_reg_sum
+    #d_tot = beta_to_zero_w_I_df(d_tot, x_vec)
 
-    return d_chi_sum + d_reg_sum
+    return d_tot
 
 def multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0):
 
@@ -662,6 +683,7 @@ def multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0):
         d_chi_d_beta  += - np.real(2 *model_freqj_for_dbeta * B_ifft_A_F)
         d_chi_d_I  += - np.real(2 *sj_model * B_ifft_A_F)
 
+    #d_chi_d_beta[model_image==0] = 0
     return x_to_I_beta([d_chi_d_I, d_chi_d_beta], reverse = True)
 
 
@@ -673,7 +695,7 @@ def multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0):
     model_image, model_beta= x_to_I_beta(x_vec)
     nx, ny = np.shape(model_image)
     chi_sum = 0
-    model_beta[model_image ==0] = 0
+    #model_beta[model_image ==0] = 0
 
     ## Main
     for i_freq in range(n_freq):
@@ -694,13 +716,23 @@ def multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0):
 
 def multi_freq_cost_l1_tsv(x_vec, *args):
 
-    beta_to_zero_w_I(x_vec)
-    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2 = args
+    #x_vec = beta_to_zero_w_I(x_vec)
+    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior  = args 
     model_image, model_beta = x_to_I_beta(x_vec)
     chi2 = multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0)
     model_beta[model_image ==0] = 0
+    beta_cost = 0
+
+    if lambda_beta_2 is None:
+        beta_cost = 0
+
+    elif beta_reg == "TSV":
+        beta_cost = lambda_beta_2 * TSV(model_beta)
+
+    elif beta_reg == "L2":
+        beta_cost = lambda_beta_2 * np.sum((model_beta-beta_prior)**2)
     
-    return chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image) + lambda_beta_2 * TSV(model_beta)
+    return chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image) + beta_cost
 
 
 
@@ -724,9 +756,10 @@ def grad_mfreq_numerical(x_vec,  *args):
     return num_grad 
 
 
-def solver_mfreq(f, f_grad, x_init, bounds, obs, noise, nu_arr, n0, lambda1, lambda2, lambda_beta_2, maxiter = 15000, factr = 10000000.0, call_back = call_back):
+def solver_mfreq(f, f_grad, x_init, bounds, obs, noise, nu_arr, n0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior, maxiter = 15000, factr = 10000000.0, call_back = call_back):
 
-    args = (obs, noise, nu_arr, n0, lambda1, lambda2, lambda_beta_2)
+    args = (obs, noise, nu_arr, n0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior)
+
     if f_grad == None:
         result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = None,\
          approx_grad = True,  bounds = bounds, maxiter = maxiter, factr = factr, callback = call_back)
@@ -768,9 +801,6 @@ def solver_mfreq_independent(loss, grad, l1_func, vis_obs,  noise, nu_arr, n0, l
             if int_freq.prod() > 0:
 
                 b, a = np.polyfit(freq_log, np.log(int_freq), 1)
-
-                #b_1 = np.log(int_freq[0]/int_freq[1])/np.log(nu_arr[0]/nu_arr[1]) 
-
 
                 ## Remove Unrealsitic high I_0
                 if np.exp(a) > 1 * max_emission:

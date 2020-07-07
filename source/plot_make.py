@@ -5,10 +5,6 @@ import os
 import logging
 import sys
 
-def int_div_for_imshow(int_num):
-    div_num = int(np.sqrt(int_num))
-    return div_num+1
-
 logger = logging.getLogger(__name__)
 
 from pathlib import Path
@@ -19,6 +15,70 @@ from setting import *
 import matplotlib as mpl
 if not LOCAL_FLAG:
     mpl.use('Agg')
+
+
+def int_div_for_imshow(int_num):
+    div_num = int(np.sqrt(int_num))
+    if not div_num**2 == int_num:
+        div_num += 1
+    div_tate = div_num
+
+    while(1):
+        if int_num >  div_num * div_tate:
+            return div_num, div_tate + 1
+
+        div_tate = div_tate -1
+
+
+
+def plots_parallel(args, title, width_im = 10, fig_size = (10,10), save_folder = None, file_name = "image"):
+
+    args = np.array(args)
+    x_len, y_len = np.shape(args[0].T)
+    len_model = len(args)
+    len_fig_side, len_fig_tate = int_div_for_imshow(len_model)
+    
+    fig_x, fig_y = fig_size
+    fig_size = (fig_x, fig_y * float(len_fig_tate /len_fig_side))
+    fig, axs = plt.subplots(len_fig_tate, len_fig_side, figsize=fig_size )
+
+    if len_fig_tate == 1:
+
+        for i in range(len_fig_side):
+            show_region = args[i].real
+            show_region = show_region[int(x_len/2) - width_im:int(x_len/2) + width_im, int(y_len/2) - width_im:int(y_len/2) + width_im]
+            pcm = axs[i].imshow(args[i].real.T, origin = "lower", vmax = np.max(show_region), vmin = np.min(show_region))
+            axs[i].set_xlim(int(x_len/2) - width_im,int(x_len/2) + width_im)
+            axs[i].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
+            axs[i].set_title(title[i])
+            fig.colorbar(pcm, ax=axs[i])
+
+    else:
+
+        for i_args_div in range(len_fig_tate):
+            for i_args_mod in range(len_fig_side):
+                i = i_args_mod + i_args_div * len_fig_side
+                print(i)
+                if i == len(args):
+                    break
+                show_region = args[i].real
+                show_region = show_region[int(x_len/2) - width_im:int(x_len/2) + width_im, int(y_len/2) - width_im:int(y_len/2) + width_im]
+                pcm = axs[i_args_div, i_args_mod].imshow(args[i].real.T, origin = "lower", vmax = np.max(show_region), vmin = np.min(show_region))
+                axs[i_args_div, i_args_mod].set_xlim(int(x_len/2) - width_im,int(x_len/2) + width_im)
+                axs[i_args_div, i_args_mod].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
+                axs[i_args_div, i_args_mod].set_title(title[i])
+                fig.colorbar(pcm, ax=axs[i_args_div, i_args_mod])
+    if save_folder !=None:
+        if not os.path.exists(save_folder):
+            os.makedirs(save_folder)
+
+        plt.savefig(os.path.join(save_folder, "%s.pdf" % file_name), bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+
+
+
 
 def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None, file_name = "image"):
 
@@ -176,7 +236,7 @@ def plots_model(*args, width_im = 10, save_folder = None):
  
     for (i, dmy) in enumerate(args):
         ms_size = 5
-        axs[i_args_div, i_args_mod].scatter(dist.flatten(), dmy.real.flatten(), s =ms_size)
+        axs[i_args_div, i_args_mod  ].scatter(dist.flatten(), dmy.real.flatten(), s =ms_size)
         axs[i_args_div, i_args_mod].set_xlim(0, width_im)
 
     if save_folder !=None:
