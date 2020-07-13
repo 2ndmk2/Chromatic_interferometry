@@ -599,6 +599,44 @@ def x_to_I_beta(x_vec,reverse = False):
 
     return model_image, model_beta
 
+def set_bounds(Nx, beta_max=4):
+
+    image_bd = []
+    beta_bd = [] 
+    nx, ny = int(Nx**0.5),int(Nx**0.5) 
+
+    for i in range(nx):
+        for j in range(ny):
+            image_bd.append([0, + np.inf])
+
+            if i==0 or j == 0 or i ==nx-1 or j == ny-1:
+                beta_bd.append([0,0])
+            else:
+                beta_bd.append([-1,beta_max])
+
+    return np.append(image_bd, beta_bd, axis =0)
+
+def edge_zero(image, flag_2d = True):
+
+    if flag_2d:
+        nx, ny = np.shape(image)
+        image[0,:] = 0
+        image[nx-1,:] = 0
+        image[:,0] = 0
+        image[0,ny-1] = 0
+    else:
+        nx = int((len(image)**0.5))
+
+        for i in range(nx):
+            for j in range(nx):
+
+                if i==0 or j == 0 or i ==nx-1 or j == nx-1:
+                    image[i + nx * j] = 0
+
+    return image
+
+
+
 def call_back(x_vec):
 
     return None
@@ -650,6 +688,7 @@ def multi_freq_grad(x_vec, *args):
     #d_tot = beta_to_zero_w_I_df(d_tot, x_vec)
 
     return d_tot
+
 
 def multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0):
 
@@ -756,16 +795,18 @@ def grad_mfreq_numerical(x_vec,  *args):
     return num_grad 
 
 
-def solver_mfreq(f, f_grad, x_init, bounds, obs, noise, nu_arr, n0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior, maxiter = 15000, factr = 10000000.0, call_back = call_back):
+def solver_mfreq(f, f_grad, x_init, bounds, obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior, maxiter = 15000, factr = 10000000.0, call_back = call_back):
 
-    args = (obs, noise, nu_arr, n0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior)
-
+    args = (obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior)
+    
     if f_grad == None:
         result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = None,\
          approx_grad = True,  bounds = bounds, maxiter = maxiter, factr = factr, callback = call_back)
     else:
         result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = f_grad, \
-            bounds = bounds, maxiter = maxiter, factr = factr, callback = call_back, )
+            bounds = bounds, maxiter = maxiter, factr = factr, callback = call_back)
+    image, beta = x_to_I_beta(result[0])
+    print(multi_freq_chi2(result[0], obs, noise, nu_arr, nu0), np.sum(image), TSV(image), TSV(beta), np.sum(beta**2))
     return result
 
 
@@ -803,11 +844,12 @@ def solver_mfreq_independent(loss, grad, l1_func, vis_obs,  noise, nu_arr, n0, l
                 b, a = np.polyfit(freq_log, np.log(int_freq), 1)
 
                 ## Remove Unrealsitic high I_0
+
                 if np.exp(a) > 1 * max_emission:
                     continue
                 image_0[i,j] = np.exp(a)
                 if b > 2 * beta_rough_est:
-                    b= beta_rough_est
+                    b= 2*beta_rough_est
                 if b<0:
                     b = 0
 

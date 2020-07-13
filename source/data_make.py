@@ -54,6 +54,9 @@ def ring_make(x_len, y_len, dx, dy, r_main, width, function = gaussian_function_
     
     return function(r, *args), xx, yy
 
+def gauss_make(x_len, y_len, dx, dy, r_main, width, function = gaussian_function_1d):
+    xx, yy = coordinate_make(x_len, y_len, dx, dy)
+
 
 def gauss_2d(mu, mu2, sigma):
     
@@ -61,7 +64,12 @@ def gauss_2d(mu, mu2, sigma):
     y = random.gauss(mu2, sigma)
     
     return (x, y)
-
+def image_beta_to_images(image_nu0,beta, nu_arr, nu0):
+    
+    images = []
+    for nu_dmy in nu_arr:
+        images.append(image_nu0 * (nu_dmy/nu0)**beta)
+    return np.array(images)
 
 ## A
 def convert_visdash_to_vis(vis, dx, dy):
@@ -270,7 +278,9 @@ def ring_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = [], 
     for nu_dmy in nu_arr:
         images_freqs.append(image_nu0 * spectral_power_model(nu_dmy, nu0, xx, yy, spectral_beta_func))
 
-    return images_freqs, xx, yy
+    return images_freqs, image_nu0, xx, yy
+
+
 
 
 class observatory_mfreq(observatory):
@@ -314,6 +324,21 @@ class observatory_mfreq(observatory):
             uv_arr_freq.append(np.array(uv_arr).T)
         uv_arr_freq = np.array(uv_arr_freq)
 
+        return uv_arr_freq
+
+    def plotter_uv_sampling(self):
+        
+        fig = plt. figure(figsize=(8.0, 8.0))
+        plt.axes().set_aspect('equal')        
+        uv_arr_freq = self.time_observation().T
+        lim_max= np.max(np.abs(uv_arr_freq))*1.3
+        plt.xlim(-lim_max, lim_max)
+        plt.ylim(-lim_max, lim_max)
+        nx, ny, n_freq = np.shape(uv_arr_freq)
+        for i in range(n_freq):
+            plt.scatter(uv_arr_freq[:,0,i], uv_arr_freq[:,1,i], s = 1)
+        plt.savefig(self.save_folder+ "uv_plot.pdf", bbox_inches='tight')
+        plt.close()
         return uv_arr_freq
 
 

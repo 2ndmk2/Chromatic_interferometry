@@ -23,21 +23,19 @@ import plot_make
 
 
 
-lambda_arr = np.array([0.6, 1.5])
+lambda_arr = np.array([0.8, 1.2])
 lambda0 = 1.0
 nu_arr = 1/lambda_arr
 nu0 = 1/lambda0
 
 
 #Making images
-beta_func = lambda xx, yy: (0.1)* data_make.gaussian_function_2d(xx, yy, WIDTH_RING_BETA, WIDTH_RING_BETA, 0,0)
-input_model, xx, yy = data_make.ring_make_multi_frequency(XNUM, YNUM, DX, DY, \
+beta_func = lambda xx, yy: (0.02)* data_make.gaussian_function_2d(xx, yy, WIDTH_RING_BETA, WIDTH_RING_BETA, 0,0)
+input_model, image_origin, xx, yy = data_make.ring_make_multi_frequency(XNUM, YNUM, DX, DY, \
     RAD_RING, WIDTH_RING, nu_arr, nu0, beta_func, function = data_make.gaussian_function_1d)
 beta_model = beta_func(xx, yy)
-
 outfile = "input_model"
 np.savez(outfile, model = input_model, others = beta_func(xx, yy) )
-
 #"""
 ## Vertual Obervatory
 obs_name = "test_observatory_mfreq"
@@ -70,7 +68,7 @@ else:
     with open(vis_file, "rb") as f:
         vis_obs, num_mat, fft_now, noise = pickle.load(f) 
         
-       
+obs_ex.plotter_uv_sampling()
 
 ## Setting priors for model
 N_tot = XNUM * YNUM
@@ -93,9 +91,9 @@ if PLOT_INPUT:
     beta_calc = np.log(image_nu0/image_nu1)/np.log(nu_arr[0]/nu_arr[1])
     flag = (np.isfinite(beta_calc) !=True)
     beta_calc[flag] = 0
-    images = [image_nu0, image_nu1, beta_calc, beta_func(xx, yy)]
-    titles = ["image nu0","image nu1", "beta_calc", "beta"]
-    plot_make.plots_parallel(images,titles, width_im = 50,\
+    images = [image_nu0, image_nu1, image_origin, beta_func(xx, yy)]
+    titles = ["image nu0","image nu1", "input at nu0", "beta"]
+    plot_make.plots_parallel(images,titles, width_im = 20,\
      save_folder = save_fig, file_name = "input_image")
 
     nx, ny = np.shape(image_nu0)
@@ -116,18 +114,19 @@ ave_beta = np.log(np.sum(image_nu0)/np.sum(image_nu1))/np.log(nu_arr[0]/nu_arr[1
 ## Solver each frequency
 ## Plot solutions
 
-lambda_l1 = 10**(-1.5)
-lambda_ltsv =10**(-2)
+lambda_l1 = 10**(-0.5)
+lambda_ltsv = 10**(-1)
+ 
 
 image_I0, beta,  model_freqs = s_freq.solver_mfreq_independent(s_freq.loss_function_arr_TSV, s_freq.grad_loss_tsv, s_freq.zero_func, \
-                                    vis_obs, noise, nu_arr, nu0, lambda_l1,lambda_ltsv, beta_def =1)
+                                    vis_obs, noise, nu_arr, nu0, lambda_l1,lambda_ltsv, beta_def =1.5)
     
 #plot indepenet images 
 
 images = [model_freqs[0], model_freqs[1], image_I0, beta]
 titles = ["Estimagenu0 ind", "Estimagenu1 ind", "EstI0 ind", "Estbeta ind"]
 plot_make.plots_parallel(images,titles, \
-	width_im = 50, save_folder = save_fig, file_name = "mfreq_ind_image")
+	width_im = 20, save_folder = save_fig, file_name = "mfreq_ind_image")
 
 
 ## Grad Check for monochromatic case
@@ -148,43 +147,42 @@ if GRAD_CONF:
     plt.scatter(result, grad_2)
 
  ## Solver for chromatic case
-
-reg_para = np.array([-0.5, -0.5, -0.5])
+reg_para = np.array([0.0, -0.5, 0.0])
 lambda_l1 = 10**(reg_para[0])
 lambda_ltsv = 10**(reg_para[1])
 lambda_beta_ltsv =  10**(reg_para[2])
-beta_reg = "L2"
-beta_prior = np.zeros(np.shape(beta))
+
+beta_reg = "TSV"
+beta_prior = 0 + np.zeros(np.shape(beta))
+beta = s_freq.edge_zero(beta)
+model_init = s_freq.edge_zero(model_init, flag_2d =False)
 
 
 ## set bounds for l_bfgs_b minimization
 
-bounds = []
-
-for i in range(N_tot):
-    bounds.append([0,+np.inf])
-
-for i in range(N_tot):
-    bounds.append([0,+np.inf])
-
-bounds = np.array(bounds)
+bounds = s_freq.set_bounds(N_tot, 10)
+print(np.shape(bounds), N_tot)
 
 ## setting for l_bfgs_b minimization
 
 f_cost= s_freq.multi_freq_cost_l1_tsv
 df_cost = s_freq.multi_freq_grad
 models_init = np.append(image_I0, np.ravel(beta))
+# models_init = s_freq.x_to_I_beta([image_origin, beta_calc], reverse = True)
 
 ## l_bfgs_b minimization
-
 result = s_freq.solver_mfreq(f_cost,df_cost, model_init, bounds,  vis_obs, \
                              noise ,nu_arr, nu0, lambda_l1, \
                              lambda_ltsv, lambda_beta_ltsv,beta_reg, beta_prior, maxiter = 200) 
 image, beta = s_freq.x_to_I_beta(result[0])
-np.savez('test', image=image, beta = beta)
+np.savez('test', image = image, beta = beta)
+
 
 beta[image==0] = 0
-print(len(image[image==0]))
-images = [image, beta]
-titles = ["EstI0", "Estbeta"]
-plot_make.plots_parallel(images, titles , width_im = int( (nx-1)/2), save_folder = save_fig, file_name = "mfreq_image")
+images_result = data_make.image_beta_to_images(image, beta, nu_arr, nu0)
+images = [images_result[0], images_result[1], image, beta]
+titles = ["Est nu0", "Est nu1", "EstI0", "Estbeta"]
+plot_make.plots_parallel(images, titles , width_im = 20, save_folder = save_fig, file_name = "mfreq_image")
+
+
+

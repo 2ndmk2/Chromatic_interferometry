@@ -4,7 +4,7 @@ import datetime
 ##
 LOCAL_FLAG = True
 RESTART = True
-REPLACE_OBS = True
+REPLACE_OBS = False
 GRAD_CONF = False 
 PLOT_INPUT = True
 PLOT_SOLVE_CURVE = False
@@ -15,20 +15,20 @@ DX, DY = 0.01, 0.01 ##arcsec
 
 
 ##base image
-RAD_RING = 0.08  ##arcsec
-WIDTH_RING  = 0.03   ## arcsec
+RAD_RING = 0.0  ##arcsec
+WIDTH_RING  = 0.04   ## arcsec
 ##beta func
-RAD_RING_BETA = 0.05  ##arcsec
-WIDTH_RING_BETA = 0.09   ## arcsec
+RAD_RING_BETA = 0.02  ##arcsec
+WIDTH_RING_BETA = 0.03   ## arcsec
 
 
 
 ## 
 PERIOD = 24 ## hrs
-NDATA= 30 
-OBS_DUR = 2 ##hrs
+NDATA= 20 
+OBS_DUR = 0.5 ##hrs
 N_ANTE = 10 ##num of antennas
-SN = 5
+SN = 3
 LAMBDA_mm= 1#mm
 ARCSEC_TO_RAD= 1/206265
 RADIUS_OBS = 1.0 ##sphere radius /km
