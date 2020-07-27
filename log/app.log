@@ -1,2 +1,2 @@
-2020-07-13 11:11:55,522|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:50, relative dif of F: 9.566848e-16
-2020-07-13 11:11:56,851|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:50, relative dif of F: 2.426514e-12
+2020-07-27 11:36:56,767|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:50, relative dif of F: 0.000000e+00
+2020-07-27 11:37:01,951|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:61, relative dif of F: 9.907958e-08

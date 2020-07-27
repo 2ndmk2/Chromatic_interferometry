@@ -31,7 +31,7 @@ nu0 = 1/lambda0
 
 #Making images
 beta_func = lambda xx, yy: (0.02)* data_make.gaussian_function_2d(xx, yy, WIDTH_RING_BETA, WIDTH_RING_BETA, 0,0)
-input_model, image_origin, xx, yy = data_make.ring_make_multi_frequency(XNUM, YNUM, DX, DY, \
+input_model, image_origin, xx, yy = data_make.radial_make_multi_frequency(XNUM, YNUM, DX, DY, \
     RAD_RING, WIDTH_RING, nu_arr, nu0, beta_func, function = data_make.gaussian_function_1d)
 beta_model = beta_func(xx, yy)
 outfile = "input_model"

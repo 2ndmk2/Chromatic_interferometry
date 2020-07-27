@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 from pathlib import Path
 rootdir = Path().resolve()
 sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../config')))
-from setting_freq import *
+from setting_freq_ring import *
 import matplotlib as mpl
 
 if not LOCAL_FLAG:
@@ -599,7 +599,7 @@ def x_to_I_beta(x_vec,reverse = False):
 
     return model_image, model_beta
 
-def set_bounds(Nx, beta_max=4):
+def set_bounds(Nx, beta_max=4, set_beta_zero_at_edge = True):
 
     image_bd = []
     beta_bd = [] 
@@ -609,7 +609,7 @@ def set_bounds(Nx, beta_max=4):
         for j in range(ny):
             image_bd.append([0, + np.inf])
 
-            if i==0 or j == 0 or i ==nx-1 or j == ny-1:
+            if set_beta_zero_at_edge and (i==0 or j == 0 or i ==nx-1 or j == ny-1):
                 beta_bd.append([0,0])
             else:
                 beta_bd.append([-1,beta_max])

@@ -142,6 +142,53 @@ def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None, fil
         plt.show()
     return None
 
+def med_bins(r_arr, d_arr,  r_min, r_max, bin_num):
+    r_bins = np.linspace(r_min, r_max, num=bin_num)
+    d_r = (r_max - r_min)/(1.0 * bin_num - 1.0)
+    mean_bins = []
+    std_bins = []
+    r_bins_return = []
+    
+    for i in range(len(r_bins)-1):
+        flag =( r_arr > r_bins[i] ) * ( r_arr < r_bins[i+1] ) 
+        if len(d_arr[flag]) < 2:
+            continue
+        mean_bins.append(np.mean(d_arr[flag]))
+        std_bins.append(np.std(d_arr[flag].real))
+        r_bins_return.append(0.5 * r_bins[i] + 0.5 * r_bins[i+1])
+
+    return np.array(mean_bins), np.array(std_bins), np.array(r_bins_return) 
+
+def plots_vis_radial(vis_obs,vis_model, rr,  save_folder, bins_flag = True):
+    n_freq, nx, ny = np.shape(vis_obs)
+    rr_arr = np.ravel(rr)/DX 
+    for i in range(n_freq):
+        vis_model_arr = np.ravel(vis_model[i])
+        vis_obs_arr = np.ravel(vis_obs[i])
+        flag_non_zero = vis_obs_arr != 0 
+        vis_obs_arr = vis_obs_arr[flag_non_zero]
+        rr_arr_obs = rr_arr[flag_non_zero]
+
+        if bins_flag:
+            mean_vis_obs, std_vis_obs, r_bins = med_bins(rr_arr_obs, vis_obs_arr, \
+                np.min(rr_arr_obs), np.max(rr_arr_obs), 100)
+        
+        plt.errorbar(r_bins, mean_vis_obs.real, yerr = std_vis_obs, fmt='o', alpha = 0.5)
+        plt.plot(rr_arr, vis_model_arr.real)
+
+    plt.savefig(os.path.join(save_folder,  "vis_obs_radial.pdf"), bbox_inches='tight')
+    plt.close()
+
+def plots_vis_radial_model(vis_model, rr,  save_folder, bins_flag = True):
+    n_freq, nx, ny = np.shape(vis_model)
+    rr_arr = np.ravel(rr)/DX 
+    for i in range(n_freq):
+        vis_model_arr = np.ravel(vis_model[i])
+        mean_vis, std_vis, r_bins = med_bins(rr_arr, vis_model_arr, np.min(rr_arr), np.max(rr_arr), 100)
+        #plt.plot(rr_arr, vis_model_arr.real)
+        plt.plot(r_bins, mean_vis.real)
+    plt.savefig(os.path.join(save_folder,  "vis_obs_radial_model.pdf"), bbox_inches='tight')
+    plt.close()
 
 
 def plots_vis(*args, vis_obs, fig_size = (10,10), save_folder = None):
@@ -222,7 +269,8 @@ def image_2dplot(image, lim = 20, zoom_f =0.5, show=False):
             plt.close()
         
 
-def plots_model(*args, width_im = 10, save_folder = None):
+
+def plots_model(*args, width_im = 10,  save_folder = None):
 
     len_model = len(args)
     nx, ny = np.shape(args[0])

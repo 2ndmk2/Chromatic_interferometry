@@ -47,7 +47,6 @@ def coordinate_make(x_len, y_len, dx, dy):
     
 def ring_make(x_len, y_len, dx, dy, r_main, width, function = gaussian_function_1d):
     
-    
     xx, yy = coordinate_make(x_len, y_len, dx, dy)
     args = (width, r_main)
     r = (xx**2 + yy**2) **0.5
@@ -206,15 +205,19 @@ class observatory:
         return pos_arr
         
         
-    def obs_make(self, dx, dy, sn):
+    def obs_make(self, dx, dy, sn, images_load = None):
 
 
-        image_dashdash = convert_Idash_to_Idashdash(self.images) * self.images
+        if images_load is not None:
+            images = images_load
+        else:
+            images = self.images
+        image_dashdash = convert_Idash_to_Idashdash(images) * images
         fft_before_shift = np.fft.fft2(image_dashdash)
         fft_after_shift = convert_visdash_to_vis(fft_before_shift, dx, dy) * fft_before_shift
         
         uv_arr = self.time_observation().T
-        x_len, y_len = np.shape(self.images)
+        x_len, y_len = np.shape(images)
         
         du = 1/(dx * x_len)
         dv = 1/(dx * y_len)
@@ -263,9 +266,67 @@ def spectral_power_model(nu_1, nu_0, xx, yy, beta_func = None):
 
     return spectral_indices 
 
+def rings_gaps_I0(x_len, y_len, dx, dy, positions, widths, fractions, gaussian_maj):
+
+    xx, yy = coordinate_make(x_len, y_len, dx, dy)
+    major_emission = gaussian_function_2d(xx, yy, gaussian_maj, gaussian_maj, 0, 0)
+    flux_returns = major_emission
+    r = (xx**2 + yy**2) **0.5
+
+    for i in range(len(positions)):
+
+        fractional_gaps = gaussian_function_1d(r, widths[i],positions[i])
+        fractional_gaps_factor = fractions[i]/np.max(fractional_gaps)
+        fractional_gaps = 1 - (fractional_gaps*fractional_gaps_factor)
+        flux_returns = flux_returns * fractional_gaps
+
+    r_arr = np.ravel(r)
+    flux_arr = np.ravel(flux_returns)
+    return flux_returns, r_arr, flux_arr
+
+def rings_gaps_I0_components(x_len, y_len, dx, dy, positions, widths, fractions, gaussian_maj):
+
+    xx, yy = coordinate_make(x_len, y_len, dx, dy)
+    major_emission = gaussian_function_2d(xx, yy, gaussian_maj, gaussian_maj, 0, 0)
+    flux_returns = major_emission
+    r = (xx**2 + yy**2) **0.5
+    flux_arrs = []
+    flux_arrs.append(major_emission)
 
 
-def ring_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = [], nu0 = 1.00, spectral_beta_func = None, function = gaussian_function_1d):
+    for i in range(len(positions)):
+
+        fractional_gaps = gaussian_function_1d(r, widths[i],positions[i])
+        fractional_gaps_factor = fractions[i]/np.max(fractional_gaps)
+        fractional_gaps = 1 - (fractional_gaps*fractional_gaps_factor)
+        flux_returns = flux_returns * fractional_gaps
+        flux_arrs.append(fractional_gaps*fractional_gaps_factor * major_emission)
+
+    return flux_arrs
+
+def rings_gaps_beta(x_len, y_len, dx, dy, positions, widths, height, gaussian_maj, beta_center=2, beta_outer = 4):
+
+    xx, yy = coordinate_make(x_len, y_len, dx, dy)
+    major_beta = gaussian_function_2d(xx, yy, gaussian_maj, gaussian_maj, 0, 0)
+    beta_height = beta_outer - beta_center  
+    major_beta_factor = beta_height/np.max(major_beta)
+    major_beta = beta_outer - major_beta * major_beta_factor
+    beta_returns = major_beta 
+    r = (xx**2 + yy**2) **0.5
+
+    for i in range(len(positions)):
+        
+        fractional_gaps = gaussian_function_1d(r, widths[i],positions[i])
+        fractional_gaps_factor = height[i]/np.max(fractional_gaps)
+        fractional_gaps = fractional_gaps*fractional_gaps_factor
+        beta_returns = beta_returns + fractional_gaps
+
+    r_arr = np.ravel(r)
+    beta_arr = np.ravel(beta_returns)
+    return beta_returns, r_arr, beta_arr 
+
+
+def radial_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = [], nu0 = 1.00, spectral_beta_func = None, function = gaussian_function_1d):
     
     
     xx, yy = coordinate_make(x_len, y_len, dx, dy)
@@ -281,7 +342,14 @@ def ring_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = [], 
     return images_freqs, image_nu0, xx, yy
 
 
+def multi_spectral_data_make(I0, beta, nu_arr, nu0):
 
+    images_freqs = []
+    
+    for nu_dmy in nu_arr:
+        images_freqs.append(I0 * (nu_dmy/nu0)** beta )
+
+    return images_freqs
 
 class observatory_mfreq(observatory):
 
@@ -342,16 +410,22 @@ class observatory_mfreq(observatory):
         return uv_arr_freq
 
 
-    def obs_make(self, dx, dy, sn):
-        
-        nfreq, x_len, y_len = np.shape(self.images)
+    def obs_make(self, dx, dy, sn, images_load = None):
+
+
+        if images_load is not None:
+            images = images_load
+        else:
+            images = self.images
+
+        nfreq, x_len, y_len = np.shape(images)
         fft_images = []
         nu_arr = 1/self.lambda_arr
         nu0 = 1/self.lambda0
 
         for i in range(nfreq):
 
-            image_dashdash = convert_Idash_to_Idashdash(self.images[i]) * self.images[i]
+            image_dashdash = convert_Idash_to_Idashdash(images[i]) * images[i]
             fft_before_shift = np.fft.fft2(image_dashdash)
             fft_after_shift = convert_visdash_to_vis(fft_before_shift, dx, dy) * fft_before_shift
             fft_images.append(fft_after_shift)
@@ -395,4 +469,27 @@ class observatory_mfreq(observatory):
         noise_freq[noise_freq ==0] = 1
         num_mat_freq = np.array(num_mat_freq)
         return vis_freq, num_mat_freq, fft_images, noise_freq
+
+
+## No masking fourier trasnform
+def fourier_image(images, dx, dy, lambda_arr, lambda0):
+    
+    nfreq, x_len, y_len = np.shape(images)
+    fft_images = []
+    nu_arr = 1/lambda_arr
+    nu0 = 1/lambda0
+
+    for i in range(nfreq):
+
+        image_dashdash = convert_Idash_to_Idashdash(images[i]) * images[i]
+        fft_before_shift = np.fft.fft2(image_dashdash)
+        fft_after_shift = convert_visdash_to_vis(fft_before_shift, dx, dy) * fft_before_shift
+        fft_images.append(fft_after_shift)
+
+    fft_images = np.array(fft_images)
+
+    return fft_images
+
+
+
 
