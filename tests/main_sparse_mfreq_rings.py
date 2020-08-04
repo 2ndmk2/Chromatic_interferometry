@@ -22,11 +22,12 @@ import solver_mfreq as s_freq
 import plot_make 
 
 
+nu_arr = np.array([350, 250]) ## Ghz
+c_const = 299792458.0 * 1e3/1e9#mm Ghz
+nu0 = 300 #/GHz
+lambda_arr = c_const/nu_arr
+lambda0 = c_const/nu0
 
-lambda_arr = np.array([0.8, 1.2])
-lambda0 = 1.0
-nu_arr = 1/lambda_arr
-nu0 = 1/lambda0
 
 
 #Making images
@@ -47,11 +48,9 @@ obs_file = obs_name + ".pk"
 
 vis_file = "vis_mfreq" + ".pk"
 
-
-
 if not os.path.exists(obs_file) or REPLACE_OBS:
     obs_ex = data_make.observatory_mfreq(input_model, NDATA , PERIOD, \
-                                         SN , OBS_DUR  , N_ANTE ,BASELINE_UVMAX, [0., 0], \
+                                         SN , OBS_DUR  , N_ANTE, BASELINE_UVMAX, [0., 0], \
                                          lambda_arr,lambda0, save_folder = FIG_FOLDER)
     obs_ex.set_antn()
     vis_obs, num_mat, fft_now, noise = obs_ex.obs_make(DX, DY, SN)
@@ -102,9 +101,11 @@ if PLOT_INPUT:
      save_folder = save_fig, file_name = "input_image")
 
     nx, ny = np.shape(image_nu0)
-    images = [fft_now[0].real, num_mat[0]]
+    obs_zero_fft = np.copy(fft_now[0].real)
+    obs_zero_fft[num_mat[0]==0] = 0 
+    images = [fft_now[0].real, obs_zero_fft]
     titles = ["vis model", "vis obs"]
-    plot_make.plots_parallel(images, titles, width_im = int( (nx-1)/2), \
+    plot_make.plots_parallel(images, titles, width_im = 80, \
     	save_folder = save_fig, file_name = "vis_input")
 
 
@@ -122,8 +123,8 @@ ave_beta = np.log(np.sum(image_nu0)/np.sum(image_nu1))/np.log(nu_arr[0]/nu_arr[1
 ## Solver each frequency
 ## Plot solutions
 
-lambda_l1 = 10**(-1.5)
-lambda_ltsv = 10**(-1.5)
+lambda_l1 = 10**(-0.5)
+lambda_ltsv = 10**(-0.5)
  
 
 image_I0, beta,  model_freqs = s_freq.solver_mfreq_independent(s_freq.loss_function_arr_TSV, s_freq.grad_loss_tsv, s_freq.zero_func, \

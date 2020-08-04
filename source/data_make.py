@@ -141,14 +141,14 @@ class observatory:
         while True:
             x = np.random.randn(dim)
             r = np.linalg.norm(x)
+
             if r != 0.:
                 posi_obs.append(x/r)
-                
                 count += 1
                 if count == self.n_pos:
                     break
 
-        self.antn =   self.radius * np.array(posi_obs)
+        self.antn =  self.radius * np.array(posi_obs)
 
     def e_unit_set(self, z_theta, y_theta):
 
@@ -163,7 +163,7 @@ class observatory:
 
 
 
-    def time_observation(self,  dim=3, radius = 6000):
+    def time_observation(self,  dim=3):
 
         position_obs = self.antn
         time_arr = np.linspace(0, self.duration, self.obs_num)
@@ -358,7 +358,7 @@ class observatory_mfreq(observatory):
         self.lambda_arr = lambda_arr
         self.lambda0 = lambda0
 
-    def time_observation(self,  dim=3, radius = 6000):
+    def time_observation(self,  dim=3):
 
         position_obs = self.antn
         time_arr = np.linspace(0, self.duration, self.obs_num)

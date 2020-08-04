@@ -14,10 +14,10 @@ PLOT_SOLVE_CURVE = False
 ## Imaging making
 XNUM, YNUM = 256, 256
 DX, DY = 0.01, 0.01
-GAPS_POS = np.array([0.09, 0.17]) * 1.5
-GAPS_WIDTH = np.array([0.015, 0.015]) * 2.0
+GAPS_POS = np.array([0.09, 0.17]) * 0.4
+GAPS_WIDTH = np.array([0.015, 0.015]) * 0.6
 GAPS_FRAC = [0.7,0.7]
-MAJ_RINGS= np.array(0.2) *1.5
+MAJ_RINGS= np.array(0.2) *0.4
 BETA_GAPS_HEIGHT  = [1, 1]
 
 ##PLOT
@@ -28,12 +28,12 @@ WIDTH_PLOT= 50
 PERIOD = 8 ## hrs
 NDATA= 20 
 OBS_DUR = 0.5 ##hrs
-N_ANTE = 40 ##num of antennas
+N_ANTE = 20 ##num of antennas
 SN = 100
 LAMBDA_mm= 1#mm
 ARCSEC_TO_RAD= 1/206265
 RADIUS_OBS = 2.0 ##sphere radius /km
-RADIUS_OBS_MM = RADIUS_OBS   * 1000 * 1000 # mm
+RADIUS_OBS_MM = RADIUS_OBS * 1000 * 1000 # mm
 BASELINE_UVMAX = RADIUS_OBS_MM  * ARCSEC_TO_RAD# /LAMBDA_mm ##
 
 
