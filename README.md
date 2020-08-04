@@ -16,5 +16,5 @@ numpy, scipy, matplotlib
 "test" folder includes sample codes for running. 
 
 - **Quickstart**   
-Go to "test" folder, and run "python main_sparse_mfreq.py".    
+Go to "test" folder, and run "main_sparse_mfreq_rings.py".    
 Results are saved in "fig" folder. 
