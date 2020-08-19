@@ -10,8 +10,9 @@ PLOT_INPUT = True
 PLOT_SOLVE_CURVE = False
 
 ##
+ARCSEC_TO_RAD= 1/206265
 XNUM, YNUM = 128, 128
-DX, DY = 0.01, 0.01 ##arcsec
+DX, DY = 0.01* ARCSEC_TO_RAD, 0.01* ARCSEC_TO_RAD ##arcsec
 
 
 ##base image
@@ -30,16 +31,15 @@ OBS_DUR = 0.5 ##hrs
 N_ANTE = 10 ##num of antennas
 SN = 3
 LAMBDA_mm= 1#mm
-ARCSEC_TO_RAD= 1/206265
 RADIUS_OBS = 1.0 ##sphere radius /km
 RADIUS_OBS_MM = RADIUS_OBS   * 1000 * 1000 # mm
-BASELINE_UVMAX = RADIUS_OBS_MM  * ARCSEC_TO_RAD# /LAMBDA_mm ##
+BASELINE_UVMAX = RADIUS_OBS_MM # /LAMBDA_mm ##
 
 
 ##
 STOP_RATIO = 1e-7
 MINITE = 50
-MAXITE = 100
+MAXITE = 500
 ETA_INIT = 1.1
 L_INIT = 1e-4
 MAX_L = 1e15

@@ -42,6 +42,8 @@ obs_name = "test_observatory_mfreq"
 obs_file = obs_name + ".pk"
 
 vis_file = "vis_mfreq" + ".pk"
+xx, yy, uu, vv = data_make.coordinate_make(XNUM, YNUM, DX, DY)
+uv_rr = (uu*uu + vv*vv)**0.5
 
 
 
@@ -58,7 +60,7 @@ if not os.path.exists(obs_file) or REPLACE_OBS:
         
         
     with open(vis_file, "wb") as f:
-        pickle.dump((vis_obs, num_mat, fft_now, noise ), f )
+        pickle.dump((vis_obs, num_mat, fft_now, noise, uv_rr ), f )
 
 else:
     
@@ -66,7 +68,7 @@ else:
         obs_ex = pickle.load(f) 
         
     with open(vis_file, "rb") as f:
-        vis_obs, num_mat, fft_now, noise = pickle.load(f) 
+        vis_obs, num_mat, fft_now, noise, uv_rr = pickle.load(f) 
         
 obs_ex.plotter_uv_sampling()
 
@@ -104,8 +106,8 @@ if PLOT_INPUT:
 
     
 if GRAD_CONF:
-    grad_num = s_freq.grad_mfreq_numerical(model_init, vis_obs, nu_arr, nu0, lambda_l1, lambda_ltsv)
-    grad_ana = s_freq.multi_freq_grad(model_init, vis_obs, nu_arr, nu0, lambda_l1, lambda_ltsv)
+    grad_num = s_freq.grad_mfreq_numerical(model_init, vis_obs, nu_arr, nu0, lambda_l1, lambda_ltsv, DX, DY)
+    grad_ana = s_freq.multi_freq_grad(model_init, vis_obs, nu_arr, nu0, lambda_l1, lambda_ltsv, DX, DY)
     plt.scatter(grad_ana, grad_num- grad_ana)
     plt.show()
     
@@ -114,12 +116,12 @@ ave_beta = np.log(np.sum(image_nu0)/np.sum(image_nu1))/np.log(nu_arr[0]/nu_arr[1
 ## Solver each frequency
 ## Plot solutions
 
-lambda_l1 = 10**(-0.5)
-lambda_ltsv = 10**(-1)
+lambda_l1 = 10**(-4.5)
+lambda_ltsv = 10**(-4)
  
 
 image_I0, beta,  model_freqs = s_freq.solver_mfreq_independent(s_freq.loss_function_arr_TSV, s_freq.grad_loss_tsv, s_freq.zero_func, \
-                                    vis_obs, noise, nu_arr, nu0, lambda_l1,lambda_ltsv, beta_def =1.5)
+                                    vis_obs, noise, nu_arr, nu0, lambda_l1,lambda_ltsv, DX, DY,XNUM, YNUM, beta_def =2.5)
     
 #plot indepenet images 
 
@@ -142,8 +144,8 @@ if GRAD_CONF:
 ## Grad Check for chromatic case
 
 if GRAD_CONF:
-    result = s_freq.grad_mfreq_numerical( model_init,  vis_obs, noise ,nu_arr, nu0, lambda_l1, lambda_ltsv) 
-    grad_2 = s_freq.multi_freq_grad( model_init,  vis_obs, noise ,nu_arr, nu0, lambda_l1, lambda_ltsv) 
+    result = s_freq.grad_mfreq_numerical( model_init,  vis_obs, noise ,nu_arr, nu0, lambda_l1, lambda_ltsv, DX, DY) 
+    grad_2 = s_freq.multi_freq_grad( model_init,  vis_obs, noise ,nu_arr, nu0, lambda_l1, lambda_ltsv, DX, DY)
     plt.scatter(result, grad_2)
 
  ## Solver for chromatic case
@@ -173,7 +175,7 @@ models_init = np.append(image_I0, np.ravel(beta))
 ## l_bfgs_b minimization
 result = s_freq.solver_mfreq(f_cost,df_cost, model_init, bounds,  vis_obs, \
                              noise ,nu_arr, nu0, lambda_l1, \
-                             lambda_ltsv, lambda_beta_ltsv,beta_reg, beta_prior, maxiter = 200) 
+                             lambda_ltsv, lambda_beta_ltsv,beta_reg, beta_prior, DX, DY, maxiter = 200) 
 image, beta = s_freq.x_to_I_beta(result[0])
 np.savez('test', image = image, beta = beta)
 

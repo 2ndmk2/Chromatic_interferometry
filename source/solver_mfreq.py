@@ -11,11 +11,13 @@ logger = logging.getLogger(__name__)
 from pathlib import Path
 rootdir = Path().resolve()
 sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../config')))
-from setting_freq_ring import *
+sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../source')))
+#from setting_data_ana import *
+from setting_freq_common import *
+
 import matplotlib as mpl
 
-if not LOCAL_FLAG:
-    mpl.use('Agg')
+
 
 
 ## Calculation of TSV
@@ -54,30 +56,35 @@ def d_TSV(mat):
     return dif_1 + dif_2 + dif_3 + dif_4
 
 def loss_function_l2(model, *args):
-    (obs, noise, model_prior, lambda_l2, ) = args
+    (obs, noise, model_prior, lambda_l2, dx, dy) = args
     model_dash = data_make.convert_Idash_to_Idashdash(model) * model
     model_vis = np.fft.fft2(model_dash)
-    model_vis = data_make.convert_visdash_to_vis(model_vis, DX, DY) * model_vis
+    model_vis = data_make.convert_visdash_to_vis(model_vis, dx, dy) * model_vis
     obs_mask = (obs == 0)
+    d_vis = np.zeros(np.shape(obs))
     d_vis = (model_vis- obs)/noise
-    d_vis[obs_mask] = 0
+    d_vis[obs_make] = 0
+
+
     return np.sum(np.abs(d_vis)**2) +  lambda_l2 * np.sum((model-model_prior)**2)
 
 def loss_function_arr_l2(model, *args):
-    (obs, noise, model_prior, lambda_l2) = args
+    (obs, noise, model_prior, lambda_l2, dx, dy) = args
     model_dash = data_make.convert_Idash_to_Idashdash(model) * model
     model_vis = np.fft.fft2(model_dash)
-    model_vis = data_make.convert_visdash_to_vis(model_vis, DX, DY) * model_vis
+    model_vis = data_make.convert_visdash_to_vis(model_vis, dx, dy) * model_vis
 
     obs_mask = (obs == 0)
+    d_vis = np.zeros(np.shape(obs))
     d_vis = (model_vis- obs)/noise
-    d_vis[obs_mask] = 0
+    d_vis[obs_make] = 0
+
     return [np.sum(np.abs(d_vis)**2), lambda_l2 * np.sum((model-model_prior)**2)]
 
 
 def grad_loss_l2(model, *args):
     
-    (obs, noise, model_prior, lambda_l2) = args
+    (obs, noise, model_prior, lambda_l2, dx, dy) = args
 
     ## Gradient for L2
     dl2_dmodel =2 * lambda_l2 * (model-model_prior)
@@ -86,12 +93,14 @@ def grad_loss_l2(model, *args):
     ## Gradient for chi^2
     model_dash = data_make.convert_Idash_to_Idashdash(model) * model
     model_vis = np.fft.fft2(model_dash)
-    model_vis = data_make.convert_visdash_to_vis(model_vis, DX, DY) * model_vis
+    model_vis = data_make.convert_visdash_to_vis(model_vis, dx, dy) * model_vis
     obs_mask = (obs == 0)
+    d_vis = np.zeros(np.shape(obs))
     d_vis = (model_vis- obs)/noise
-    d_vis[obs_mask] = 0
+    d_vis[obs_make] = 0
 
-    d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis, DX, DY)) * d_vis/noise
+
+    d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis, dx, dy)) * d_vis
     ifft_F = np.fft.ifft2(d_vis)
     ifft_F = np.conjugate(data_make.convert_Idash_to_Idashdash(ifft_F)) * ifft_F
     dF_dmodel =2* nx * ny* ifft_F.real 
@@ -99,7 +108,7 @@ def grad_loss_l2(model, *args):
 
 def grad_loss_arr_l2(model, *args):
     
-    (obs, noise, model_prior, lambda_l2) = args
+    (obs, noise, model_prior, lambda_l2, dx, dy) = args
 
     ## Gradient for L2
     dl2_dmodel =2 * lambda_l2 * (model-model_prior)
@@ -108,13 +117,14 @@ def grad_loss_arr_l2(model, *args):
     ## Gradient for chi^2
     model_dash = data_make.convert_Idash_to_Idashdash(model) * model
     model_vis = np.fft.fft2(model_dash)
-    model_vis = data_make.convert_visdash_to_vis(model_vis, DX, DY) * model_vis
+    model_vis = data_make.convert_visdash_to_vis(model_vis, dx, dy) * model_vis
 
     obs_mask = (obs == 0)
+    d_vis = np.zeros(np.shape(obs))
     d_vis = (model_vis- obs)/noise
-    d_vis[obs_mask] = 0
+    d_vis[obs_make] = 0
 
-    d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis, DX, DY)) * d_vis/noise
+    d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis, dx, dy)) * d_vis
     ifft_F = np.fft.ifft2(d_vis)
     ifft_F = np.conjugate(data_make.convert_Idash_to_Idashdash(ifft_F)) * ifft_F
     dF_dmodel =2* nx * ny* ifft_F.real
@@ -123,7 +133,7 @@ def grad_loss_arr_l2(model, *args):
 
 ## For comparison with above analytical expressions
 def grad_loss_numerical_l2(model,i,j, *args):
-    (obs,noise,  model_prior, lambda_l2) = args
+    (obs,noise,  model_prior, lambda_l2, dx, dy) = args
 
     model_new = np.copy(model) 
     eps = 1e-5
@@ -135,23 +145,27 @@ def grad_loss_numerical_l2(model,i,j, *args):
 
 
 def loss_function_TSV(model, *args):
-    (obs, noise, model_prior, lambda_ltsv) = args
+    (obs, noise, model_prior, lambda_ltsv, dx, dy) = args
     model_dash = data_make.convert_Idash_to_Idashdash(model) * model
     model_vis = np.fft.fft2(model_dash)
-    model_vis = data_make.convert_visdash_to_vis(model_vis, DX, DY) * model_vis
+    model_vis = data_make.convert_visdash_to_vis(model_vis, dx, dy) * model_vis
     obs_mask = (obs == 0)
+    d_vis = np.zeros(np.shape(obs))
     d_vis = (model_vis- obs)/noise
-    d_vis[obs_mask] = 0
+    d_vis[obs_make] = 0
+
+
     return np.sum(np.abs(d_vis)**2) +  lambda_ltsv * TSV(model)
 
 
 def loss_function_arr_TSV(model, *args):
-    (obs, noise,  model_prior, lambda_ltsv) = args
+    (obs, noise,  model_prior, lambda_ltsv, dx, dy) = args
     model_dash = data_make.convert_Idash_to_Idashdash(model) * model
     model_vis = np.fft.fft2(model_dash)
-    model_vis = data_make.convert_visdash_to_vis(model_vis, DX, DY) * model_vis
+    model_vis = data_make.convert_visdash_to_vis(model_vis,dx, dy) * model_vis
     obs_mask = (obs == 0)
-    d_vis = (model_vis - obs)/noise
+    d_vis = np.zeros(np.shape(obs))
+    d_vis = (model_vis- obs)/noise
     d_vis[obs_mask] = 0
 
     return [np.sum(np.abs(d_vis)**2), lambda_ltsv * TSV(model)]
@@ -159,7 +173,7 @@ def loss_function_arr_TSV(model, *args):
 
 def grad_loss_tsv(model, *args):
     
-    (obs, noise, model_prior, lambda_ltsv) = args
+    (obs, noise, model_prior, lambda_ltsv, dx, dy) = args
 
     ## Gradient for L2
     nx, ny = np.shape(model)
@@ -168,13 +182,14 @@ def grad_loss_tsv(model, *args):
     ## Gradient for chi^2
     model_dash = data_make.convert_Idash_to_Idashdash(model) * model
     model_vis = np.fft.fft2(model_dash)
-    model_vis = data_make.convert_visdash_to_vis(model_vis, DX, DY) * model_vis
+    model_vis = data_make.convert_visdash_to_vis(model_vis, dx, dy) * model_vis
 
     obs_mask = (obs == 0)
-    d_vis = (model_vis- obs)/noise
+    d_vis = np.zeros(np.shape(obs))
+    d_vis = (model_vis- obs)/(noise*noise)
     d_vis[obs_mask] = 0
 
-    d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis, DX, DY)) * d_vis/noise
+    d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis,dx, dy)) * d_vis
     ifft_F = nx * ny* np.fft.ifft2(d_vis)
     ifft_F = np.conjugate(data_make.convert_Idash_to_Idashdash(ifft_F)) * ifft_F
     dF_dmodel =2*  ifft_F.real 
@@ -183,7 +198,7 @@ def grad_loss_tsv(model, *args):
 
 def grad_loss_arr_TSV(model, *args):
     
-    (obs, noise,  model_prior, lambda_ltsv) = args
+    (obs, noise,  model_prior, lambda_ltsv, dx, dy) = args
 
     ## Gradient for L2
     nx, ny = np.shape(model)
@@ -191,13 +206,14 @@ def grad_loss_arr_TSV(model, *args):
     ## Gradient for chi^2
     model_dash = data_make.convert_Idash_to_Idashdash(model) * model
     model_vis = np.fft.fft2(model_dash)
-    model_vis = data_make.convert_visdash_to_vis(model_vis, DX, DY) * model_vis
+    model_vis = data_make.convert_visdash_to_vis(model_vis, dx, dy) * model_vis
 
     obs_mask = (obs == 0)
-    d_vis = (model_vis- obs)/noise
-    d_vis[obs_mask] = 0
+    d_vis = np.zeros(np.shape(obs))
+    d_vis= (model_vis - obs)/(noise*noise)
+    d_vis[obs_make] = 0
 
-    d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis, DX, DY)) * d_vis/noise
+    d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis,dx, dy)) * d_vis
     ifft_F = nx * ny*  np.fft.ifft2(d_vis)
     ifft_F = np.conjugate(data_make.convert_Idash_to_Idashdash(ifft_F)) * ifft_F
     dF_dmodel = 2* ifft_F.real 
@@ -205,7 +221,7 @@ def grad_loss_arr_TSV(model, *args):
     return dF_dmodel, lambda_ltsv * d_TSV(model)
 
 def grad_loss_numerical_TSV(model, *args):
-    (obs, noise, model_prior, lambda_l2) = args
+    (obs, noise, model_prior, lambda_l2, dx, dy) = args
 
     grad_tot = np.zeros(np.shape(model))
     nx, ny = np.shape(model)
@@ -229,7 +245,7 @@ def L1_norm(model, *args):
     if len(args) ==0:
         return np.sum(np.abs(model))
     else:
-        (obs, noise, lambda_l1, lambda_l2) = args
+        (obs, noise, lambda_l1, lambda_l2, dx, dy) = args
         return lambda_l1 * np.sum(np.abs(model))
 
 
@@ -262,14 +278,14 @@ def positive_soft_threshold(model, lambda_t, print_flag=False):
     model[mask_temp1] -= lambda_t
     model[mask_temp2] =0
     if print_flag:
-        logger.info(len(model[mask_temp1]), len(model[mask_temp2]),len(model[mask_temp3]),lambda_t)
+        logger.info("%d %d %e" % (len(model[mask_temp1]), len(model[mask_temp2]),lambda_t))
     return model
 
 
 def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_init = 1, iter_max = 1000, iter_min =300, \
  mask_positive = True,  stop_ratio = 1e-10, restart = True, *args):
 
-    (obs, noise, lambda_l1, lambda_l2) = args
+    (obs, noise, lambda_l1, lambda_l2, dx, dy) = args
     tk = 1
     x_k=init_model
     y_k = init_model
@@ -292,7 +308,6 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
 
         while(1):
 
-            logger.debug("itercount: %d, L: %e, eta:%e" % (itercount, L, eta))
             if L > MAX_L:
                 if ETA_MIN < eta:
                     L = L_init
@@ -314,6 +329,7 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
                 z_temp = soft_threshold(y_k -(1/L) *f_grad_yk,lambda_l1 *(1/L)) 
             Q_temp = calc_Q(z_temp, y_k, loss_f, L1_norm, f_grad_yk, L, *args)
             F_temp = loss_f(z_temp, *args) + lambda_l1 * L1_norm(z_temp)
+            logger.debug("itercount: %d, L: %e, eta:%e, Q: %e, F:%e" % (itercount, L, eta,Q_temp, F_temp))
             if F_temp < Q_temp:
                 break
             else:
@@ -366,8 +382,9 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
                 plt.close()
             break
     relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
-    logger.info("end; fitting. iternum:%d, relative dif of F: %e" % (itercount, relative_dif))
-
+    logger.info("end; fitting. iternum:%d, relative dif of F: %e\n" % (itercount, relative_dif))
+    chi, l2 =loss_f_arr(y_k, *args)
+    logger.info("chi:%e, L1:%e, Reg:%e " % (chi,np.sum(y_k), l2))
     return y_k, SOLVED_FLAG_DONE
 
 
@@ -375,7 +392,7 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
 def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_init = 1, iter_max = 1000, \
     iter_min = 300, mask_positive = True, stop_ratio = 1e-10, restart = True,  *args):
 
-    (obs, noise, model_prior, lambda_l2) = args
+    (obs, noise, model_prior, lambda_l2, dx, dy) = args
     tk = 1
     x_k = init_model
     y_k = init_model
@@ -493,7 +510,7 @@ def adam(init_model, loss_f, grad_f, alpha = 0.001, beta_1 = 0.9, beta_2 = 0.999
     
 ## Optimization method insetad of FISTA
 def steepest_method(init_model, init_alpha, ryo = 0.7,  c1=0.7, eps_stop = 1e-10, iter_max = 1000, loss_name = "tsv", *args):
-    (obs, model_prior, lambda_l2) = args
+    (obs, model_prior, lambda_l2, dx, dy) = args
     model = init_model
     alpha = init_alpha
     next_start_alpha = init_alpha
@@ -599,7 +616,7 @@ def x_to_I_beta(x_vec,reverse = False):
 
     return model_image, model_beta
 
-def set_bounds(Nx, beta_max=4, set_beta_zero_at_edge = True):
+def set_bounds(Nx, beta_max=4, set_beta_zero_at_edge = True, flux_max=np.inf):
 
     image_bd = []
     beta_bd = [] 
@@ -607,7 +624,7 @@ def set_bounds(Nx, beta_max=4, set_beta_zero_at_edge = True):
 
     for i in range(nx):
         for j in range(ny):
-            image_bd.append([0, + np.inf])
+            image_bd.append([-1*10**(-9), + flux_max])
 
             if set_beta_zero_at_edge and (i==0 or j == 0 or i ==nx-1 or j == ny-1):
                 beta_bd.append([0,0])
@@ -635,10 +652,12 @@ def edge_zero(image, flag_2d = True):
 
     return image
 
-
+COUNT = 0
 
 def call_back(x_vec):
-
+    global COUNT
+    COUNT += 1
+    print(COUNT)
     return None
 
 
@@ -661,7 +680,7 @@ def multi_freq_grad(x_vec, *args):
     #x_vec = beta_to_zero_w_I(x_vec)
 
     ## Load
-    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior  = args 
+    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior, dx, dy  = args 
     n_freq = len(nu_arr)
     model_image, model_beta= x_to_I_beta(x_vec)
     nx, ny = np.shape(model_image)
@@ -683,14 +702,14 @@ def multi_freq_grad(x_vec, *args):
         #d_beta_reg[model_image==0] = 0
 
     d_reg_sum = x_to_I_beta([d_L1_norm_I  + d_TSV_I, d_beta_reg], reverse = True)
-    d_chi_sum = multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0)
+    d_chi_sum = multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0, dx, dy)
     d_tot = d_chi_sum + d_reg_sum
     #d_tot = beta_to_zero_w_I_df(d_tot, x_vec)
 
     return d_tot
 
 
-def multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0):
+def multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0,dx, dy):
 
     ## Load
     n_freq = len(nu_arr)
@@ -699,20 +718,20 @@ def multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0):
     d_chi_d_I = np.zeros(np.shape(model_image))
     d_chi_d_beta = np.zeros(np.shape(model_image))
 
-
     ## Main
     for i_freq in range(n_freq):
 
         model_freqj = ((nu_arr[i_freq]/nu0)**model_beta ) * model_image
         model_dash = data_make.convert_Idash_to_Idashdash(model_freqj) * model_freqj
         model_vis = np.fft.fft2(model_dash)
-        model_vis = data_make.convert_visdash_to_vis(model_vis, DX, DY) * model_vis
+        model_vis = data_make.convert_visdash_to_vis(model_vis, dx, dy) * model_vis
 
         obs_mask = (obs[i_freq] == 0)
-        d_vis = (obs[i_freq] - model_vis )/noise[i_freq]
+        d_vis = np.zeros(np.shape(obs[i_freq]))
+        d_vis = (-model_vis + obs[i_freq])/noise[i_freq]
+        d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis, dx, dy)) * d_vis/noise[i_freq]
         d_vis[obs_mask] = 0
 
-        d_vis = np.conjugate(data_make.convert_visdash_to_vis(d_vis, DX, DY)) * d_vis/noise[i_freq]
         ifft_A_d_vis = nx * ny*  np.fft.ifft2(d_vis)
         B_ifft_A_F = np.conjugate(data_make.convert_Idash_to_Idashdash(ifft_A_d_vis)) * ifft_A_d_vis
 
@@ -727,7 +746,7 @@ def multi_freq_chi2_grad(x_vec, obs, noise, nu_arr, nu0):
 
 
 
-def multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0):
+def multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0, dx, dy):
 
     ## Load
     n_freq = len(nu_arr)
@@ -742,13 +761,15 @@ def multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0):
         model_freqj = ((nu_arr[i_freq]/nu0)**model_beta ) * model_image
         model_dash = data_make.convert_Idash_to_Idashdash(model_freqj) * model_freqj
         model_vis = np.fft.fft2(model_dash)
-        model_vis = data_make.convert_visdash_to_vis(model_vis, DX, DY) * model_vis
+        model_vis = data_make.convert_visdash_to_vis(model_vis, dx, dy) * model_vis
 
         obs_mask = (obs[i_freq] == 0)
+        obs_mask_2 = ((obs[i_freq] == 0)==False)
+        d_vis = np.zeros(np.shape(obs[i_freq]))
         d_vis = (model_vis - obs[i_freq])/noise[i_freq]
         d_vis[obs_mask] = 0
 
-        chi_sum += np.sum(np.abs(d_vis)**2)
+        chi_sum += np.sum(np.abs(d_vis)*np.abs(d_vis))
 
     return chi_sum
 
@@ -756,11 +777,10 @@ def multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0):
 def multi_freq_cost_l1_tsv(x_vec, *args):
 
     #x_vec = beta_to_zero_w_I(x_vec)
-    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior  = args 
+    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior, dx, dy  = args 
     model_image, model_beta = x_to_I_beta(x_vec)
-    chi2 = multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0)
+    chi2 = multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0, dx, dy)
     model_beta[model_image ==0] = 0
-    beta_cost = 0
 
     if lambda_beta_2 is None:
         beta_cost = 0
@@ -770,34 +790,37 @@ def multi_freq_cost_l1_tsv(x_vec, *args):
 
     elif beta_reg == "L2":
         beta_cost = lambda_beta_2 * np.sum((model_beta-beta_prior)**2)
-    
-    return chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image) + beta_cost
+
+    cost_sum = chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image) + beta_cost
+    logger.info("mfreq solving: chi2:%e, l1:%e, TSV:%e, beta:%e, sum:%e" % \
+        (chi2,  L1_norm(model_image), TSV(model_image), beta_cost, cost_sum))
+    return cost_sum
 
 
 
 def grad_mfreq_numerical(x_vec,  *args):
 
-    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2 = args
-    delta = 1e-5
+    obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, dx, dy   = args
+    delta = 1e-10
     model_image, model_beta = x_to_I_beta(x_vec)
-    chi2 = multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0)
-    chi_sum = chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image)
+    chi2 = multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0, dx, dy)
+    chi_sum = chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image) + lambda_beta_2 * TSV(model_beta)  
     num_grad = np.ones(len(x_vec))
 
     for i in range(len(x_vec)):
         x_vec_delta = np.copy(x_vec)
         x_vec_delta[i] += delta
         model_image, model_beta = x_to_I_beta(x_vec_delta)
-        chi2 = multi_freq_chi2(x_vec_delta, obs, noise, nu_arr, nu0)
-        chi_sum_delta = chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image)
+        chi2 = multi_freq_chi2(x_vec_delta, obs, noise, nu_arr, nu0, dx, dy)
+        chi_sum_delta = chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image)+ lambda_beta_2 * TSV(model_beta)
         num_grad[i] = (chi_sum_delta - chi_sum)/delta 
 
     return num_grad 
 
 
-def solver_mfreq(f, f_grad, x_init, bounds, obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior, maxiter = 15000, factr = 10000000.0, call_back = call_back):
+def solver_mfreq(f, f_grad, x_init, bounds, obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior, dx,dy, maxiter = 15000, factr = 10000000.0, call_back = call_back):
 
-    args = (obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior)
+    args = (obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_beta_2, beta_reg, beta_prior, dx, dy)
     
     if f_grad == None:
         result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = None,\
@@ -806,26 +829,28 @@ def solver_mfreq(f, f_grad, x_init, bounds, obs, noise, nu_arr, nu0, lambda1, la
         result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = f_grad, \
             bounds = bounds, maxiter = maxiter, factr = factr, callback = call_back)
     image, beta = x_to_I_beta(result[0])
-    print(multi_freq_chi2(result[0], obs, noise, nu_arr, nu0), np.sum(image), TSV(image), TSV(beta), np.sum(beta**2))
+    print("chi:%e,L1:%e, TSV:%e, TSV(beta):%e" %(multi_freq_chi2(result[0], obs, noise, nu_arr, nu0, dx, dy), \
+        np.sum(image), TSV(image), TSV(beta)))
     return result
 
 
-def solver_mfreq_independent(loss, grad, l1_func, vis_obs,  noise, nu_arr, n0, l1_lambda, l2_lambda, beta_def = None, positive_solve =True, percentile = 10):
+def solver_mfreq_independent(loss, grad, l1_func, vis_obs,  noise, nu_arr, n0, l1_lambda, l2_lambda, dx, dy, xnum, ynum, beta_def = None, positive_solve =True, percentile = 10):
 
     nfreq, nx, ny = np.shape(vis_obs)
-    model_freqs = np.zeros((nfreq, XNUM, YNUM))
+    model_freqs = np.zeros((nfreq, xnum, ynum))
 
     for i in range(nfreq):
-        init_model = np.zeros((XNUM, YNUM))
+        init_model = np.zeros((xnum, ynum))
         image, solved = fx_L1_mfista(init_model, loss, 
             grad, l1_func, ETA_INIT, L_INIT, MAXITE, MINITE, positive_solve ,\
-            STOP_RATIO,RESTART, vis_obs[i], noise[i], l1_lambda, l2_lambda)
+            STOP_RATIO,RESTART, vis_obs[i], noise[i], l1_lambda, l2_lambda, dx, dy)
 
         model_freqs[i] = image
 
+
     freq_log = np.log(nu_arr/n0)
-    beta = np.zeros((XNUM, YNUM))
-    image_0 = np.zeros((XNUM, YNUM))
+    beta = np.zeros((xnum, ynum))
+    image_0 = np.zeros((xnum, ynum))
     max_emission = np.max(model_freqs)
 
 
@@ -835,13 +860,18 @@ def solver_mfreq_independent(loss, grad, l1_func, vis_obs,  noise, nu_arr, n0, l
     if beta_def is not None:
         beta_rough_est =  beta_def
 
-    for i in range(XNUM):
-        for j in range(YNUM):
+    for i in range(xnum):
+        for j in range(ynum):
             int_freq = model_freqs[:,i,j]
 
             if int_freq.prod() > 0:
 
                 b, a = np.polyfit(freq_log, np.log(int_freq), 1)
+
+                if not (np.isfinite(b) and np.isfinite(a)):
+                    image_0[i,j] = 0
+                    beta[i,j] = 0
+                    continue
 
                 ## Remove Unrealsitic high I_0
 

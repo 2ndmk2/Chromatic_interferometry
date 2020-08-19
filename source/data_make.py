@@ -4,6 +4,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import os
+from scipy.stats import binned_statistic_2d
+import pandas as pd
+
 
 
 def make_dir(dirName):
@@ -43,7 +46,16 @@ def coordinate_make(x_len, y_len, dx, dy):
     x_shift = x - np.mean(x)
     y_shift = y - np.mean(y)
     xx, yy= np.meshgrid(x_shift, y_shift, indexing='ij')
-    return xx, yy
+
+    du = 1/(dx * x_len)
+    dv = 1/(dy * y_len)
+    u = np.arange(0,x_len * du, du)
+    v = np.arange(0,y_len * dv, dv)
+    u_shift = u - np.mean(u)
+    v_shift = v - np.mean(v)
+
+    uu, vv= np.meshgrid(u_shift, v_shift, indexing='ij')
+    return xx, yy, uu, vv
     
 def ring_make(x_len, y_len, dx, dy, r_main, width, function = gaussian_function_1d):
     
@@ -80,7 +92,7 @@ def convert_visdash_to_vis(vis, dx, dy):
     phase_factor = np.exp( (float(x_len-1)/float(x_len)) * np.pi*1j* (xx + yy))
     phase_factor2 = np.exp(-np.pi*1j* (float((x_len-1)**2/float(x_len))))
     
-    return dx * dy * phase_factor * phase_factor2 
+    return phase_factor * phase_factor2 
 
 
 ## A^-1
@@ -93,7 +105,7 @@ def convert_vis_to_visdash(vis, dx, dy):
     phase_factor = np.exp( - (float(x_len-1)/float(x_len)) * np.pi*1j* (xx + yy))
     phase_factor2 = np.exp(np.pi*1j* (float((x_len-1)**2/float(x_len))))
 
-    return (1/dx) * (1/dy) * phase_factor * phase_factor2 
+    return phase_factor * phase_factor2 
 
 ## B
 def convert_Idash_to_Idashdash(image):
@@ -200,7 +212,7 @@ class observatory:
         plt.ylim(-lim_max, lim_max)
         plt.axes().set_aspect('equal')        
         plt.scatter(pos_arr[0,:], pos_arr[1,:], s = 1)
-        plt.savefig(self.save_folder+ "uv_plot.pdf", bbox_inches='tight')
+        plt.savefig(self.save_folder+ "uv_plot.png", bbox_inches='tight', dpi = 200)
         plt.close()
         return pos_arr
         
@@ -266,9 +278,11 @@ def spectral_power_model(nu_1, nu_0, xx, yy, beta_func = None):
 
     return spectral_indices 
 
-def rings_gaps_I0(x_len, y_len, dx, dy, positions, widths, fractions, gaussian_maj):
 
-    xx, yy = coordinate_make(x_len, y_len, dx, dy)
+## Jy/pix
+def rings_gaps_I0(x_len, y_len, dx, dy, positions, widths, fractions, gaussian_maj, flux_max=1e-3):
+
+    xx, yy, uu, vv = coordinate_make(x_len, y_len, dx, dy)
     major_emission = gaussian_function_2d(xx, yy, gaussian_maj, gaussian_maj, 0, 0)
     flux_returns = major_emission
     r = (xx**2 + yy**2) **0.5
@@ -281,6 +295,7 @@ def rings_gaps_I0(x_len, y_len, dx, dy, positions, widths, fractions, gaussian_m
         flux_returns = flux_returns * fractional_gaps
 
     r_arr = np.ravel(r)
+    flux_returns = flux_max * flux_returns/(np.max(flux_returns))
     flux_arr = np.ravel(flux_returns)
     return flux_returns, r_arr, flux_arr
 
@@ -306,7 +321,7 @@ def rings_gaps_I0_components(x_len, y_len, dx, dy, positions, widths, fractions,
 
 def rings_gaps_beta(x_len, y_len, dx, dy, positions, widths, height, gaussian_maj, beta_center=2, beta_outer = 4):
 
-    xx, yy = coordinate_make(x_len, y_len, dx, dy)
+    xx, yy, uu, vv = coordinate_make(x_len, y_len, dx, dy)
     major_beta = gaussian_function_2d(xx, yy, gaussian_maj, gaussian_maj, 0, 0)
     beta_height = beta_outer - beta_center  
     major_beta_factor = beta_height/np.max(major_beta)
@@ -329,7 +344,7 @@ def rings_gaps_beta(x_len, y_len, dx, dy, positions, widths, height, gaussian_ma
 def radial_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = [], nu0 = 1.00, spectral_beta_func = None, function = gaussian_function_1d):
     
     
-    xx, yy = coordinate_make(x_len, y_len, dx, dy)
+    xx, yy, uu, vv = coordinate_make(x_len, y_len, dx, dy)
 
     args = (width, r_main)
     r = (xx**2 + yy**2) **0.5
@@ -442,7 +457,7 @@ class observatory_mfreq(observatory):
         v_shift = v - np.mean(v)
         for_bins_u = np.append(u_shift, np.max(u_shift)+du) - du/2
         for_bins_v = np.append(v_shift, np.max(v_shift)+dv) - dv/2
-        
+
         vis_freq = np.zeros((nfreq, x_len, y_len), dtype=np.complex)
         noise_freq = np.zeros((nfreq, x_len, y_len), dtype=np.complex)
         num_mat_freq = []
@@ -469,7 +484,32 @@ class observatory_mfreq(observatory):
         noise_freq[noise_freq ==0] = 1
         num_mat_freq = np.array(num_mat_freq)
         return vis_freq, num_mat_freq, fft_images, noise_freq
+## Calculation of TSV
+def TSV(mat):
+    sum_tsv = 0
+    Nx, Ny = np.shape(mat)
+    
+    # TSV terms from left to right 
+    mat_2 = np.roll(mat, shift = 1, axis = 1) 
+    sum_tsv += np.sum( (mat_2[:,1:Ny]-mat[:,1:Ny]) * (mat_2[:,1:Ny]-mat[:,1:Ny]) )
+    
+    # TSV terms from bottom to top  
+    mat_3 = np.roll(mat, shift = 1, axis = 0) 
+    sum_tsv += np.sum( (mat_3[1:Nx, :]-mat[1:Nx, :]) * (mat_3[1:Nx, :]-mat[1:Nx, :]) )
+    
+    #Return all TSV terms
+    return sum_tsv
 
+def print_chi_L1_TSV_for_inputmodel(vis_obs, vis_model, noise, image_model, beta_model):
+    d_vis = (vis_obs - vis_model)/noise
+    d_vis[vis_obs==0] = 0
+    chi = np.sum(np.abs(d_vis)*np.abs(d_vis))
+    l1 = np.sum(image_model)
+    TSV_image = TSV(image_model)
+    TSV_beta = TSV(beta_model)
+    print("Input model:")
+    print("chi:%e, l1:%e, TSV:%e, TSV_beta:%e" % (chi, l1, TSV_image, TSV_beta))
+    print("if chi=1, l1:%e, TSV:%e, TSV_beta:%e" % (chi/l1, chi/TSV_image, chi/TSV_beta)) 
 
 ## No masking fourier trasnform
 def fourier_image(images, dx, dy, lambda_arr, lambda0):

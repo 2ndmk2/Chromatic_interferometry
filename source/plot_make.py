@@ -58,7 +58,6 @@ def plots_parallel(args, title, width_im = 10, fig_size = (10,10), save_folder =
         for i_args_div in range(len_fig_tate):
             for i_args_mod in range(len_fig_side):
                 i = i_args_mod + i_args_div * len_fig_side
-                print(i)
                 if i == len(args):
                     break
                 show_region = args[i].real
@@ -72,7 +71,7 @@ def plots_parallel(args, title, width_im = 10, fig_size = (10,10), save_folder =
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
 
-        plt.savefig(os.path.join(save_folder, "%s.pdf" % file_name), bbox_inches='tight')
+        plt.savefig(os.path.join(save_folder, "%s.png" % file_name), dpi = 100, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -161,7 +160,8 @@ def med_bins(r_arr, d_arr,  r_min, r_max, bin_num):
 
 def plots_vis_radial(vis_obs,vis_model, rr,  save_folder, bins_flag = True):
     n_freq, nx, ny = np.shape(vis_obs)
-    rr_arr = np.ravel(rr)/DX 
+    rr_arr = np.ravel(rr)
+
     for i in range(n_freq):
         vis_model_arr = np.ravel(vis_model[i])
         vis_obs_arr = np.ravel(vis_obs[i])
@@ -171,13 +171,15 @@ def plots_vis_radial(vis_obs,vis_model, rr,  save_folder, bins_flag = True):
 
         if bins_flag:
             mean_vis_obs, std_vis_obs, r_bins = med_bins(rr_arr_obs, vis_obs_arr, \
-                np.min(rr_arr_obs), np.max(rr_arr_obs), 100)
+                np.min(rr_arr_obs), np.max(rr_arr_obs), 30)
         
         plt.errorbar(r_bins, mean_vis_obs.real, yerr = std_vis_obs, fmt='o', alpha = 0.5)
-        plt.plot(rr_arr, vis_model_arr.real)
+        plt.scatter(rr_arr, vis_model_arr.real)
+        plt.xlim(0, 0.2 * 1e7)
 
-    plt.savefig(os.path.join(save_folder,  "vis_obs_radial.pdf"), bbox_inches='tight')
+    plt.savefig(os.path.join(save_folder,  "vis_obs_radial.png"), dpi = 200, bbox_inches='tight')
     plt.close()
+
 
 def plots_vis_radial_model(vis_model, rr,  save_folder, bins_flag = True):
     n_freq, nx, ny = np.shape(vis_model)
@@ -189,6 +191,7 @@ def plots_vis_radial_model(vis_model, rr,  save_folder, bins_flag = True):
         plt.plot(r_bins, mean_vis.real)
     plt.savefig(os.path.join(save_folder,  "vis_obs_radial_model.pdf"), bbox_inches='tight')
     plt.close()
+
 
 
 def plots_vis(*args, vis_obs, fig_size = (10,10), save_folder = None):
@@ -267,7 +270,23 @@ def image_2dplot(image, lim = 20, zoom_f =0.5, show=False):
         else:
             plt.pause(0.1)
             plt.close()
+
+
         
+def plotter_uv_sampling(pos_arr, save_folder = "./test", save_filename = "uv_plot.pdf"):
+    
+    n_uv, n_freq, ndata = np.shape(pos_arr)
+    fig = plt. figure(figsize=(8.0, 8.0))
+    lim_max= np.max(np.abs(pos_arr)/1000.0)*1.3
+    plt.xlim(-lim_max, lim_max)
+    plt.ylim(-lim_max, lim_max)
+    plt.xlabel("u ($k\lambda$)", fontsize = 20)
+    plt.ylabel("v ($k\lambda$)", fontsize = 20)
+    plt.axes().set_aspect('equal') 
+    for i_freq in range(n_freq):     
+        plt.scatter(pos_arr[0][i_freq]/1000.0, pos_arr[1][i_freq]/1000.0, s = 1)
+    plt.savefig(os.path.join(save_folder, save_filename), bbox_inches='tight', dpi =200)
+    plt.close()    
 
 
 def plots_model(*args, width_im = 10,  save_folder = None):
