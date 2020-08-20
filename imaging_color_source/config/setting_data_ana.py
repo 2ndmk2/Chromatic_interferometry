@@ -1,0 +1,7 @@
+## Imaging Params
+ARCSEC_TO_RAD= 1/206265.0
+XNUM, YNUM = 256, 256
+DX, DY = 0.02*ARCSEC_TO_RAD, 0.02*ARCSEC_TO_RAD 
+
+
+ 
