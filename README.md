@@ -9,7 +9,7 @@ https://ja.overleaf.com/read/ssmzrdfkvyfw
 (Still messy)
 
 - **Requirements**  
-numpy, scipy, matplotlib
+numpy, scipy, matplotlib, CASA (ver >= 5.4.1)
 
 - **Quickstart**   
 do "bash run.sh"
