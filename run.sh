@@ -1,4 +1,4 @@
-cd imaging_color_sp/tests
+cd imaging_color_source/tests
 python main_sparse_mfreq_rings.py
 cd ../../simulator_casa
 python modified.py

@@ -46,13 +46,6 @@ ETA_MIN= 1.09
 SOLVED_FLAG_ER = "SOLVE ERROR"
 SOLVED_FLAG_DONE = "SOlVED"
 FIG_FOLDER = "../fig/"
-FIG_IMAGES_FOLDER = "../fig/fig_branch"
-
-if not os.path.exists(FIG_FOLDER):
-	os.makedirs(FIG_FOLDER)
-
-if not os.path.exists(FIG_IMAGES_FOLDER):
-	os.makedirs(FIG_IMAGES_FOLDER)
 
 
  

@@ -8,11 +8,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 rootdir = Path().resolve()
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../imaging_color_sp/source')))
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../imaging_color_sp/config')))
+sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../imaging_color_source/source')))
+sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../imaging_color_source/config')))
 import plot_make
 
-input_models = np.load("../imaging_color_sp/tests/input_model.npz")
+input_models = np.load("../imaging_color_source/tests/input_model.npz")
 input_model = input_models["model"][0]
 input_model2 = input_models["model"][1]
 model_nu0 = input_models["model_nu0"]

@@ -26,7 +26,7 @@ uv_dist_250 = uv_dist_250[uv_dist_250_arg]
 real_250 = real_250[uv_dist_250_arg]
 
 
-folder_origin = "../imaging_color_sp/tests"
+folder_origin = "../imaging_color_source/tests"
 file_origin = os.path.join(folder_origin, "vis_mfreq.pk")
 vis_obs, num_mat, fft_now, noise, uv_rr = pd.read_pickle(file_origin)
 uv_rr = np.ravel(uv_rr)
