@@ -9,12 +9,7 @@ https://ja.overleaf.com/read/ssmzrdfkvyfw
 (Still messy)
 
 - **Requirements**  
-numpy, scipy, matplotlib
-
-- **Contents**  
-"source" folder includes main modules for chromatic imaging.  
-"test" folder includes sample codes for running. 
+numpy, scipy, matplotlib, CASA (ver >= 5.4.1)
 
 - **Quickstart**   
-Go to "test" folder, and run "main_sparse_mfreq_rings.py".    
-Results are saved in "fig" folder. 
+do "bash run.sh"
