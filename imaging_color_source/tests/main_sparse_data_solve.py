@@ -26,8 +26,8 @@ import data_load
 save_fig = FIG_FOLDER
 
 
-vis_folder = "../../simulator_casa/vis_out"
-vis_files = [ os.path.join(vis_folder, "psim_freq350.alma.out20.noisy.csv"), 
+vis_folder = os.path.join(ROOT_FOLDER, "vis_sim")
+vis_files = [os.path.join(vis_folder, "psim_freq350.alma.out20.noisy.csv"), 
 os.path.join(vis_folder,"psim_freq250.alma.out20.noisy.csv") ]
 freqs_file = os.path.join(vis_folder,"vis_file_freqs.npy")
 u_obs, v_obs, vis_obs, nu_arr = data_load.loader_of_visibility_from_csv(vis_files, freqs_file)
@@ -35,9 +35,10 @@ nu_arr = np.array([350.00, 250.0])
 vis_freq, num_mat_freq, noise_freq = data_load.grided_vis_from_obs(vis_obs, \
     u_obs, v_obs, DX, DY, len(nu_arr), XNUM, YNUM)
 nu0 = 300 #/GHz
+factor = 1000
 
-vis_freq = vis_freq*1000
-noise_freq = noise_freq*1000
+vis_freq = vis_freq*factor
+noise_freq = noise_freq*factor
 
 
 plot_make.plotter_uv_sampling(np.array([u_obs, v_obs]), FIG_FOLDER, "uv_plot.png")
@@ -65,24 +66,27 @@ model_init[N_tot:2*N_tot] =3
 ## Solver each frequency
 ## Plot solutions
 
-lambda_l1 = 10**(0.5) 
-lambda_ltsv = 10**(0.5) 
+lambda_l1 = 10**(-3.5) 
+lambda_ltsv = 10**(-2.5) 
 
 
 image_I0, beta,  model_freqs = s_freq.solver_mfreq_independent(s_freq.loss_function_arr_TSV, s_freq.grad_loss_tsv, s_freq.zero_func, \
                                     vis_freq, noise_freq, nu_arr, nu0, lambda_l1,lambda_ltsv, DX, DY, XNUM, YNUM, beta_def =2.0, \
                                     positive_solve =True)
-    
+image_I0_def = image_I0/factor
+model_freqs_def = model_freqs/factor
+
 #plot indepenet images 
 
-images = [model_freqs[0], model_freqs[1], image_I0, beta]
+images = [model_freqs_def[0], model_freqs_def[1], image_I0_def, beta]
 titles = ["Estimagenu0 ind", "Estimagenu1 ind", "EstI0 ind", "Estbeta ind"]
 plot_make.plots_parallel(images,titles, \
 	width_im = WIDTH_PLOT, save_folder = save_fig, file_name = "mfreq_ind_image")
+np.savez('mfreq_ind_solution', image = image_I0_def, alpha = beta, image_nu = model_freqs_def)
 
 
  ## Solver for chromatic case
-reg_para = np.array([-1.0, 1.0, 0.5]) 
+reg_para = np.array([-1.5, -0.5, -0.5])  
 lambda_l1 =  10**(reg_para[0])
 lambda_ltsv =  10**(reg_para[1])
 lambda_beta_ltsv =  10**(reg_para[2])
@@ -100,23 +104,25 @@ bounds = s_freq.set_bounds(N_tot, beta_max=np.inf , set_beta_zero_at_edge =False
 f_cost= s_freq.multi_freq_cost_l1_tsv
 df_cost = s_freq.multi_freq_grad
 
-clean_file= "../../simulator_casa/test/I0_alpha_clean.npz"
+clean_file= os.path.join(ROOT_FOLDER, "clean_result/I0_alpha_clean.npz")
 clean_result = np.load(clean_file)
 
-#model_init = np.append(image_I0, beta)
-model_init = np.append(clean_result["I0"], clean_result["alpha"])
+model_init = np.append(image_I0, beta)
+#model_init = np.append(clean_result["I0"], clean_result["alpha"])
 
 
 ## l_bfgs_b minimization
 result = s_freq.solver_mfreq(f_cost,df_cost, model_init, bounds,  vis_freq, \
                              noise_freq,nu_arr, nu0, lambda_l1, \
-                             lambda_ltsv, lambda_beta_ltsv,beta_reg, beta_prior, DX, DY, maxiter = 200) 
-image, beta = s_freq.x_to_I_beta(result[0])
-np.savez('test', image = image, beta = beta)
+                             lambda_ltsv, lambda_beta_ltsv,beta_reg, beta_prior, DX, DY, maxiter = 1000) 
+image, alpha = s_freq.x_to_I_beta(result[0])
+image_def = image/factor
 
-beta[image==0] = 0
-images_result = data_make.image_beta_to_images(image, beta, nu_arr, nu0)
-images = [images_result[0], images_result[1], image, beta]
+alpha[image_def==0] = 0
+images_result = data_make.image_beta_to_images(image_def, alpha, nu_arr, nu0)
+np.savez('mfreq_solution', image = image_def, alpha = alpha, image_nu = images_result)
+
+images = [images_result[0], images_result[1], image_def, alpha]
 titles = ["Est nu0", "Est nu1", "EstI0", "Estbeta"]
 plot_make.plots_parallel(images, titles , width_im = WIDTH_PLOT, save_folder = save_fig, file_name = "mfreq_image")
 

@@ -2,6 +2,7 @@ import os
 import datetime
 import numpy as np
 from argparse import ArgumentParser
+ROOT_FOLDER = "/Users/masatakaaizawa/research/current_research/chromatic_imaging/project1"
 
 def parser():
     parser = ArgumentParser()
@@ -24,8 +25,8 @@ WIDTH_PLOT= 128
 
 ##
 STOP_RATIO = 1e-7
-MINITE = 50
-MAXITE = 100
+MINITE = 300
+MAXITE = 500
 ETA_INIT = 1.1
 L_INIT = 1e-3
 MAX_L = 1e15

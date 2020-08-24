@@ -77,6 +77,35 @@ def plots_parallel(args, title, width_im = 10, fig_size = (10,10), save_folder =
         plt.show()
 
 
+def plots_comparison(nu0_images, nu1_images, image0s, alphas, width_im = 10, fig_size = (10,10), save_folder = None, file_name = "image"):
+
+    len_fig_tate = 4
+    len_fig_side, x_len, y_len = np.shape(image0s)
+    image_for_plots = np.array([nu0_images, nu1_images, image0s, alphas])
+
+    fig, axs = plt.subplots(len_fig_tate, len_fig_side, figsize=fig_size )
+
+    for i_args_div in range(len_fig_tate):
+        vmin_input = np.min(image_for_plots[i_args_div][0])
+        vmax_input = np.min(image_for_plots[i_args_div][0])
+
+        for i_args_mod in range(len_fig_side):
+
+            show_region = image_for_plots[i_args_div][i_args_mod]
+            show_region = show_region[int(x_len/2) - width_im:int(x_len/2) + width_im, int(y_len/2) - width_im:int(y_len/2) + width_im]
+            pcm = axs[i_args_div, i_args_mod].imshow(image_for_plots[i_args_div][i_args_mod].T, origin = "lower", vmax = vmax_input, vmin = vmin_input)
+            axs[i_args_div, i_args_mod].set_xlim(int(x_len/2) - width_im,int(x_len/2) + width_im)
+            axs[i_args_div, i_args_mod].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
+            axs[i_args_div, i_args_mod].set_title(ref_yoko[iargs_mod])
+            fig.colorbar(pcm, ax=axs[i_args_div, i_args_mod])
+
+    if save_folder !=None:
+        if not os.path.exists(save_folder):
+            os.makedirs(save_folder)
+
+        plt.savefig(os.path.join(save_folder, "%s.png" % file_name), dpi = 100, bbox_inches='tight')
+        plt.close()
+
 
 
 def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None, file_name = "image"):

@@ -1,7 +1,10 @@
 import astropy.io.fits as pyfits
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 import os
+sys.path.insert(0,'../config')
+from setting_freq_common import *
 
 hdulist=pyfits.open('./ppdisk672_GHz_50pc.fits')
 hdu=hdulist[0]
@@ -24,8 +27,8 @@ new_model2 = new_model2[np.newaxis,np.newaxis,:,:]
 
 hdu.header["NAXIS1"] = NX
 hdu.header["NAXIS2"] = NY
-hdu.header["CDELT1"] = 0.02/206265.0
-hdu.header["CDELT2"] = 0.02/206265.0
+hdu.header["CDELT1"] = DX_PIX/206265.0
+hdu.header["CDELT2"] = DX_PIX/206265.0
 
 if not os.path.exists("fits_modified"):
 	os.makedirs("fits_modified")

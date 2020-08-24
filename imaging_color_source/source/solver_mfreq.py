@@ -267,7 +267,7 @@ def soft_threshold(model, lambda_t, print_flag=False):
     model[mask_temp2] =0
     model[mask_temp3] += lambda_t
     if print_flag:
-        logger.info(len(model[mask_temp1]), len(model[mask_temp2]),len(model[mask_temp3]),lambda_t)
+        logger.debug(len(model[mask_temp1]), len(model[mask_temp2]),len(model[mask_temp3]),lambda_t)
     return model
 
 ## For proximal mapping under positive condition
@@ -278,7 +278,7 @@ def positive_soft_threshold(model, lambda_t, print_flag=False):
     model[mask_temp1] -= lambda_t
     model[mask_temp2] =0
     if print_flag:
-        logger.info("%d %d %e" % (len(model[mask_temp1]), len(model[mask_temp2]),lambda_t))
+        logger.debug("%d %d %e" % (len(model[mask_temp1]), len(model[mask_temp2]),lambda_t))
     return model
 
 
@@ -657,7 +657,8 @@ COUNT = 0
 def call_back(x_vec):
     global COUNT
     COUNT += 1
-    print(COUNT)
+    #print(COUNT)
+    logger.debug(COUNT)
     return None
 
 
@@ -792,7 +793,7 @@ def multi_freq_cost_l1_tsv(x_vec, *args):
         beta_cost = lambda_beta_2 * np.sum((model_beta-beta_prior)**2)
 
     cost_sum = chi2 + lambda1 * L1_norm(model_image) + lambda2* TSV(model_image) + beta_cost
-    logger.info("mfreq solving: chi2:%e, l1:%e, TSV:%e, beta:%e, sum:%e" % \
+    logger.debug("mfreq solving: chi2:%e, l1:%e, TSV:%e, beta:%e, sum:%e" % \
         (chi2,  L1_norm(model_image), TSV(model_image), beta_cost, cost_sum))
     return cost_sum
 
