@@ -5,17 +5,13 @@ import os
 import sys
 from scipy import optimize 
 import data_make
+import matplotlib as mpl
 
 logger = logging.getLogger(__name__)
 
-from pathlib import Path
-rootdir = Path().resolve()
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../config')))
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../source')))
-#from setting_data_ana import *
+sys.path.insert(0,'../../config')
+from setting_freq_image import *
 from setting_freq_common import *
-
-import matplotlib as mpl
 
 
 

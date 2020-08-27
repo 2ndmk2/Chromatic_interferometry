@@ -2,12 +2,7 @@ import numpy as np
 import os
 from scipy.stats import binned_statistic_2d
 import pandas as pd
-from pathlib import Path
-import sys
-rootdir = Path().resolve()
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../config')))
-from setting_data_ana import *
-import plot_make
+
 
 def loader_of_visibility_from_csv(files, file_freq):
 

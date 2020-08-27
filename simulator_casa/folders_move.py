@@ -7,6 +7,8 @@ import glob
 
 
 def mv_folders(folder_names, move_to_place):
+	if not os.path.exists(move_to_place):
+		os.makedirs(move_to_place)
 	for name in folder_names:
 		path_new = os.path.join(move_to_place, name)
 		if os.path.exists(path_new):
@@ -21,9 +23,7 @@ def remove_files(names):
 out_folder ="./vis_sim"
 clean_folder ="./clean_result"
 folder_names =[clean_folder, "psim_freq350", "psim_freq250", out_folder, "plot_images", "fits_modified"]
-mv_folders(folder_names, ROOT_FOLDER)
-
-
+mv_folders(folder_names, FOLDER_clean)
 
 logs = glob.glob("*.log")
 lasts = glob.glob("*.last")

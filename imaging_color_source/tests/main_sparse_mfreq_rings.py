@@ -1,27 +1,31 @@
-import logging, logging.config
-logging.config.fileConfig('../config/logging.conf')
-logger = logging.getLogger(__name__)
-
 import os
 import sys
 from pathlib import Path
 import pickle
 import importlib
-
-rootdir = Path().resolve()
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../source')))
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../config')))
-
-import setting_freq_ring
-from setting_freq_ring import *
-from setting_freq_common import *
-import setting_freq_common
-import data_make 
 import matplotlib as mpl
 import numpy as np
 import matplotlib.pyplot as plt
+
+
+import logging, logging.config
+logging.config.fileConfig('../../config/logging.conf')
+logger = logging.getLogger(__name__)
+sys.path.insert(0,'../../config')
+
+
+from setting_freq_image import *
+from setting_freq_common import *
+from setting_freq_ring import *
+
+sys.path.insert(0, os.path.abspath(os.path.join(SOURCE_PATH , 'source')))
+import data_make 
 import solver_mfreq as s_freq
 import plot_make 
+import data_load
+
+save_fig = FOLDER_pre
+
 
 args = parser()
 SOLVE_RUN = args.solve
@@ -47,19 +51,19 @@ input_model = data_make.multi_spectral_data_make(image_origin, beta_model,nu_arr
 
 uv_rr = (uu*uu + vv*vv)**0.5
 
-outfile = "input_model"
+outfile = os.path.join(FOLDER_pre, "input_model") 
 np.savez(outfile, model = input_model, model_nu0 = image_origin, beta = beta_model, nu_arr = nu_arr, nu0 = nu0 )
 #"""
 ## Vertual Obervatory
-obs_name = "test_observatory_mfreq"
+obs_name = os.path.join(FOLDER_pre, "observatory_mfreq")
 obs_file = obs_name + ".pk"
+vis_file = os.path.join(FOLDER_pre, "vis_mfreq.pk")
 
-vis_file = "vis_mfreq" + ".pk"
 
 if not os.path.exists(obs_file) or REPLACE_OBS:
     obs_ex = data_make.observatory_mfreq(input_model, NDATA , PERIOD, \
                                          SN , OBS_DUR  , N_ANTE, BASELINE_UVMAX, [0., 0], \
-                                         lambda_arr,lambda0, save_folder = FIG_FOLDER)
+                                         lambda_arr,lambda0, save_folder = save_fig)
     obs_ex.set_antn()
     vis_obs, num_mat, fft_now, noise = obs_ex.obs_make(DX, DY, SN)
 
@@ -92,10 +96,9 @@ model_init[N_tot:2*N_tot] =3
 
 grad_flag = False
 
-data = np.load("./%s.npz" % outfile)
+data = np.load(outfile + ".npz")
 image_nu0 = data["model"][0]
 image_nu1 = data["model"][1]
-save_fig = FIG_FOLDER
 
 if PLOT_INPUT:
     beta_calc = np.log(image_nu0/image_nu1)/np.log(nu_arr[0]/nu_arr[1])

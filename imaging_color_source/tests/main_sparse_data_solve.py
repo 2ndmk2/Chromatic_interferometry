@@ -1,32 +1,32 @@
-import logging, logging.config
-logging.config.fileConfig('../config/logging.conf')
-logger = logging.getLogger(__name__)
-
 import os
 import sys
 from pathlib import Path
 import pickle
 import importlib
-
-rootdir = Path().resolve()
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../source')))
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../config')))
-
-import setting_data_ana
-from setting_data_ana import *
-from setting_freq_common import *
-import data_make 
 import matplotlib as mpl
 import numpy as np
 import matplotlib.pyplot as plt
+
+
+import logging, logging.config
+logging.config.fileConfig('../../config/logging.conf')
+logger = logging.getLogger(__name__)
+sys.path.insert(0,'../../config')
+
+
+from setting_freq_image import *
+from setting_freq_common import *
+sys.path.insert(0, os.path.abspath(os.path.join(SOURCE_PATH , 'source')))
+import data_make 
 import solver_mfreq as s_freq
 import plot_make 
 import data_load
 
-save_fig = FIG_FOLDER
+save_fig = FOLDER_sparse
 
 
-vis_folder = os.path.join(ROOT_FOLDER, "vis_sim")
+
+vis_folder = os.path.join(FOLDER_clean, "vis_sim")
 vis_files = [os.path.join(vis_folder, "psim_freq350.alma.out20.noisy.csv"), 
 os.path.join(vis_folder,"psim_freq250.alma.out20.noisy.csv") ]
 freqs_file = os.path.join(vis_folder,"vis_file_freqs.npy")
@@ -41,13 +41,13 @@ vis_freq = vis_freq*factor
 noise_freq = noise_freq*factor
 
 
-plot_make.plotter_uv_sampling(np.array([u_obs, v_obs]), FIG_FOLDER, "uv_plot.png")
+plot_make.plotter_uv_sampling(np.array([u_obs, v_obs]), save_fig, "uv_plot.png")
 
 
 vis_for_plots = [vis_freq[0].real, vis_freq[1].real]
 titles = ["Real Vis 350 GHz", "Real Vis 250 GHz"]
 plot_make.plots_parallel(vis_for_plots, titles, width_im = 80, \
-	save_folder = FIG_FOLDER, file_name = "vis_obs")
+	save_folder = save_fig, file_name = "vis_obs")
 
 
 #Making images
@@ -82,7 +82,7 @@ images = [model_freqs_def[0], model_freqs_def[1], image_I0_def, beta]
 titles = ["Estimagenu0 ind", "Estimagenu1 ind", "EstI0 ind", "Estbeta ind"]
 plot_make.plots_parallel(images,titles, \
 	width_im = WIDTH_PLOT, save_folder = save_fig, file_name = "mfreq_ind_image")
-np.savez('mfreq_ind_solution', image = image_I0_def, alpha = beta, image_nu = model_freqs_def)
+np.savez(os.path.join(FOLDER_sparse,'mfreq_ind_solution'), image = image_I0_def, alpha = beta, image_nu = model_freqs_def)
 
 
  ## Solver for chromatic case
@@ -104,7 +104,7 @@ bounds = s_freq.set_bounds(N_tot, beta_max=np.inf , set_beta_zero_at_edge =False
 f_cost= s_freq.multi_freq_cost_l1_tsv
 df_cost = s_freq.multi_freq_grad
 
-clean_file= os.path.join(ROOT_FOLDER, "clean_result/I0_alpha_clean.npz")
+clean_file= os.path.join(FOLDER_clean, "clean_result/I0_alpha_clean.npz")
 clean_result = np.load(clean_file)
 
 model_init = np.append(image_I0, beta)
@@ -120,7 +120,7 @@ image_def = image/factor
 
 alpha[image_def==0] = 0
 images_result = data_make.image_beta_to_images(image_def, alpha, nu_arr, nu0)
-np.savez('mfreq_solution', image = image_def, alpha = alpha, image_nu = images_result)
+np.savez(os.path.join(FOLDER_sparse, 'mfreq_solution'), image = image_def, alpha = alpha, image_nu = images_result)
 
 images = [images_result[0], images_result[1], image_def, alpha]
 titles = ["Est nu0", "Est nu1", "EstI0", "Estbeta"]

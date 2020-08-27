@@ -1,7 +1,7 @@
-2020-08-24 10:53:36,396|INFO    |numexpr.utils|_init_num_threads|NumExpr defaulting to 8 threads.
-2020-08-24 10:53:58,387|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:301, relative dif of F: 9.984669e-08
+2020-08-27 11:26:05,272|INFO    |numexpr.utils|_init_num_threads|NumExpr defaulting to 8 threads.
+2020-08-27 11:26:27,270|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:301, relative dif of F: 9.984669e-08
 
-2020-08-24 10:53:58,393|INFO    |solver_mfreq|fx_L1_mfista|chi:6.071930e+03, L1:7.992309e+03, Reg:1.445073e+00 
-2020-08-24 10:54:27,963|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:501, relative dif of F: 1.291650e-07
+2020-08-27 11:26:27,277|INFO    |solver_mfreq|fx_L1_mfista|chi:6.071930e+03, L1:7.992309e+03, Reg:1.445073e+00 
+2020-08-27 11:26:56,300|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:501, relative dif of F: 1.291650e-07
 
-2020-08-24 10:54:27,970|INFO    |solver_mfreq|fx_L1_mfista|chi:3.795856e+02, L1:2.898826e+03, Reg:2.800701e-01 
+2020-08-27 11:26:56,307|INFO    |solver_mfreq|fx_L1_mfista|chi:3.795856e+02, L1:2.898826e+03, Reg:2.800701e-01 

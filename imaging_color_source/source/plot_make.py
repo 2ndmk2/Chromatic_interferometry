@@ -7,15 +7,6 @@ import sys
 
 logger = logging.getLogger(__name__)
 
-from pathlib import Path
-rootdir = Path().resolve()
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../config')))
-from setting import *
-
-import matplotlib as mpl
-if not LOCAL_FLAG:
-    mpl.use('Agg')
-
 
 def int_div_for_imshow(int_num):
     div_num = int(np.sqrt(int_num))
@@ -212,7 +203,7 @@ def plots_vis_radial(vis_obs,vis_model, rr,  save_folder, bins_flag = True):
 
 def plots_vis_radial_model(vis_model, rr,  save_folder, bins_flag = True):
     n_freq, nx, ny = np.shape(vis_model)
-    rr_arr = np.ravel(rr)/DX 
+    rr_arr = np.ravel(rr)
     for i in range(n_freq):
         vis_model_arr = np.ravel(vis_model[i])
         mean_vis, std_vis, r_bins = med_bins(rr_arr, vis_model_arr, np.min(rr_arr), np.max(rr_arr), 100)

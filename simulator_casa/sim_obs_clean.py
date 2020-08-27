@@ -4,6 +4,8 @@ import os
 import sys
 sys.path.insert(0,'../config')
 from setting_freq_common import *
+from setting_freq_image import *
+
 
 def ms_to_visfile(files, out_folder):
 	
@@ -71,8 +73,6 @@ rm_folders(folder_names)
 
 
 default("simobserve")
-
-
 
 
 if os.path.exists(out_folder):

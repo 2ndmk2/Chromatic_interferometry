@@ -6,6 +6,8 @@ import sys
 from astropy.io import fits
 import matplotlib.pyplot as plt
 import pandas as pd
+sys.path.insert(0,'../config')
+from setting_freq_common import *
 
 ##Data Loading
 df_none = pd.read_csv('./vis_sim/psim_freq350.alma.out20.csv', header=None)
@@ -26,8 +28,7 @@ uv_dist_250 = uv_dist_250[uv_dist_250_arg]
 real_250 = real_250[uv_dist_250_arg]
 
 
-folder_origin = "../imaging_color_source/tests"
-file_origin = os.path.join(folder_origin, "vis_mfreq.pk")
+file_origin = os.path.join(FOLDER_pre,"vis_mfreq.pk")
 vis_obs, num_mat, fft_now, noise, uv_rr = pd.read_pickle(file_origin)
 uv_rr = np.ravel(uv_rr)
 arg_uv_dist_sim = np.argsort(uv_rr)

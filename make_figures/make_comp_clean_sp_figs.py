@@ -6,6 +6,10 @@ from pathlib import Path
 from astropy.io import fits
 import matplotlib.pyplot as plt
 import pandas as pd
+sys.path.insert(0,'../config')
+
+from setting_freq_common import *
+
 
 def plots_comparison(nu0_images, nu1_images, image0s, alphas, width_im = 10, fig_size = (20,20), save_folder = None, file_name = "image"):
 
@@ -88,7 +92,7 @@ def plots_radial(nu0_images, nu1_images, image0s, alphas, label_names,  fig_size
 		plt.close()
 
 ## INPUT
-input_models = np.load("../imaging_color_source/tests/input_model.npz")
+input_models = np.load(os.path.join(FOLDER_pre,"input_model.npz"))
 input_model_nu0 = input_models["model"][0]
 input_model_nu1 = input_models["model"][1]
 input_image0 = input_models["model_nu0"]
@@ -97,7 +101,7 @@ nu_arr = np.array(input_models["nu_arr"])
 nu_0 = float(input_models["nu0"])
 
 ## CLEAN
-fileimage_taylor0 = "../../project1/clean_result/try.image.tt0.fits"
+fileimage_taylor0 = os.path.join(FOLDER_clean, "clean_result/try.image.tt0.fits")
 hdul = fits.open(fileimage_taylor0)
 image_taylor0 = np.array(hdul[0].data[0][0])
 header = hdul[0].header
@@ -108,14 +112,14 @@ beam_div_pixel2 = np.pi * Bmaj * Bmin/(4 * np.log(2) * d_pixel **2)
 image_taylor0 = image_taylor0/beam_div_pixel2
 hdul.close()
 
-fileimage_taylor1 = "../../project1/clean_result/try.image.tt1.fits"
+fileimage_taylor1 = os.path.join(FOLDER_clean, "clean_result/try.image.tt1.fits")
 hdul = fits.open(fileimage_taylor1)
 image_taylor1 = np.array(hdul[0].data[0][0])
 header2 = hdul[0].header
 image_taylor1 = image_taylor1/beam_div_pixel2
 hdul.close()
 
-fileimage_alpha = "../../project1/clean_result/try.alpha.fits"
+fileimage_alpha= os.path.join(FOLDER_clean, "clean_result/try.alpha.fits")
 hdul = fits.open(fileimage_alpha)
 clean_alpha = np.array(hdul[0].data[0][0])
 hdul.close()
@@ -125,8 +129,8 @@ clean_model_nu1 = image_taylor0 + image_taylor1 * (nu_arr[1] - nu_0)/nu_0
 clean_image0 = image_taylor0
 
 ## mfreq
-image_result_ind = np.load("../imaging_color_source/tests/mfreq_ind_solution.npz")
-image_result_mfreq = np.load("../imaging_color_source/tests/mfreq_solution.npz")
+image_result_ind = np.load(os.path.join(FOLDER_sparse, "mfreq_ind_solution.npz"))
+image_result_mfreq = np.load(os.path.join(FOLDER_sparse, "mfreq_solution.npz"))
 
 ## Integration of images
 image_nu0s = [input_model_nu0, clean_model_nu0, image_result_ind["image_nu"][0], image_result_mfreq["image_nu"][0]]
@@ -137,8 +141,8 @@ alpha_arrs = [input_alpha, clean_alpha, image_result_ind["alpha"],image_result_m
 ## 
 names = ["input", "clean", "sp_ind", "sp_full"]
 
-plots_comparison(image_nu0s, image_nu1s, image0_arrs, alpha_arrs, width_im = 128, save_folder = "../../project1/fig", file_name = "comp_alls")
-plots_radial(image_nu0s, image_nu1s, image0_arrs, alpha_arrs, names, save_folder = "../../project1/fig", file_name = "comp_alls")
+plots_comparison(image_nu0s, image_nu1s, image0_arrs, alpha_arrs, width_im = 128, save_folder = FOLDER_sparse, file_name = "comp_alls")
+plots_radial(image_nu0s, image_nu1s, image0_arrs, alpha_arrs, names, save_folder = FOLDER_sparse, file_name = "comp_alls")
 
 
 

@@ -3,21 +3,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import os
+
 sys.path.insert(0,'../config')
 from setting_freq_common import *
+from setting_freq_image import *
+
 
 hdulist=pyfits.open('./ppdisk672_GHz_50pc.fits')
 hdu=hdulist[0]
 data=hdu.data
 
 header = hdu.header
-#flux_max = np.max(data)
 flux_factor = 1
-data2 = np.load("../imaging_color_source/tests/input_model.npz")
+data2 = np.load(os.path.join(FOLDER_pre,"input_model.npz"))
 input_model = data2["model"][0]
 input_model2 = data2["model"][1]
 NX, NY = np.shape(input_model)
-print(NX, NY)
 flux_max_input = np.max(input_model)
 new_model= flux_factor * input_model
 new_model = new_model[np.newaxis,np.newaxis,:,:]

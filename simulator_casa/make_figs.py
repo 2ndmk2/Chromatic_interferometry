@@ -6,13 +6,15 @@ import sys
 from astropy.io import fits
 import matplotlib.pyplot as plt
 import pandas as pd
+sys.path.insert(0,'../config')
+from setting_freq_image import *
+from setting_freq_common import *
 
-rootdir = Path().resolve()
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../imaging_color_source/source')))
-sys.path.insert(0, os.path.abspath(os.path.join(rootdir , '../imaging_color_source/config')))
+sys.path.insert(0, os.path.abspath(os.path.join(SOURCE_PATH , 'source')))
+sys.path.insert(0, os.path.abspath(os.path.join(SOURCE_PATH , 'config')))
 import plot_make
 
-input_models = np.load("../imaging_color_source/tests/input_model.npz")
+input_models = np.load(os.path.join(FOLDER_pre, "input_model.npz"))
 input_model = input_models["model"][0]
 input_model2 = input_models["model"][1]
 model_nu0 = input_models["model_nu0"]
@@ -21,13 +23,10 @@ nu_arr = np.array(input_models["nu_arr"])
 nu_0 = float(input_models["nu0"])
 
 images = [input_model, input_model2, model_nu0, beta_model]
-WIDTH_PLOT = 120
 outfolder = "plot_images"
 titles = ["image nu[0]","image nu[1]", "input at nu0", "alpha"]
 plot_make.plots_parallel(images,titles, width_im = WIDTH_PLOT,\
  save_folder = outfolder, file_name = "input_image")
-
-
 
 
 fileimage_taylor0 = "./clean_result/try.image.tt0.fits"
@@ -68,7 +67,6 @@ image_alpha[image_alpha>alpha_max] = alpha_max
 np.savez("./clean_result/I0_alpha_clean", I0 = image_taylor0, alpha = image_alpha)
 
 images = [image_freq0, image_freq1, image_taylor0, image_alpha]
-WIDTH_PLOT = 120
 outfolder = "plot_images"
 titles = ["image nu[0]","image nu[1]", "input at nu0", "alpha"]
 plot_make.plots_parallel(images,titles, width_im = WIDTH_PLOT,\
