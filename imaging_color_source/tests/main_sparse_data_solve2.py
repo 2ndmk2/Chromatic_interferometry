@@ -42,8 +42,6 @@ lambda_l1_pre, lambda_tsv_pre, lambda_alpha_pre, factor = \
 s_freq.determine_regularization_scaling_from_clean(num_mat_freq, \
 	clean_result["I0"], clean_result["alpha"])
 
-print(lambda_l1_pre, lambda_tsv_pre, lambda_alpha_pre, factor)
-
 vis_freq = vis_freq*factor
 noise_freq = noise_freq*factor
 
@@ -70,7 +68,6 @@ model_init[N_tot:2*N_tot] =3
 
 lambda_l1 = 10**(-1.5) 
 lambda_ltsv = 10**(-0.5) 
-print(nu_arr)
 
 image_I0, alpha,  model_freqs = s_freq.solver_mfreq_independent(s_freq.loss_function_arr_TSV, s_freq.grad_loss_tsv, s_freq.zero_func, \
                                     vis_freq, noise_freq, nu_arr, nu0, lambda_l1,lambda_ltsv, DX, DY, XNUM, YNUM, alpha_def =2.0, \
@@ -86,45 +83,22 @@ plot_make.plots_parallel(images,titles, \
 np.savez(os.path.join(FOLDER_sparse,'mfreq_ind_solution'), image = image_I0_def, alpha = alpha, image_nu = model_freqs_def)
 
 
- ## Solver for chromatic case
-reg_para = np.array([-1.5, 0.0, -0.0])  
-lambda_l1 =  10**(reg_para[0])
-lambda_ltsv =  10**(reg_para[1])
-lambda_alpha_ltsv =  10**(reg_para[2])
+## Solver for chromatic case
+lambda_l1_pre, lambda_tsv_pre, lambda_alpha_pre
 
-alpha_reg = "TSV"
-alpha_prior = 0 + np.zeros(np.shape(alpha))
-model_init = s_freq.edge_zero(model_init, flag_2d =False)
-
-
-## set bounds for l_bfgs_b minimization
-bounds = s_freq.set_bounds(N_tot, alpha_max=np.inf , set_alpha_zero_at_edge =False)
-
-## setting for l_bfgs_b minimization
-#alpha = np.ones(np.shape(alpha)) * 3
-f_cost= s_freq.multi_freq_cost_l1_tsv
-df_cost = s_freq.multi_freq_grad
-
-clean_file= os.path.join(FOLDER_clean, "clean_result/I0_alpha_clean.npz")
-clean_result = np.load(clean_file)
-
-#model_init = np.append(image_I0, alpha)
-model_init = np.append(clean_result["I0"], clean_result["alpha"])
-
-
-## l_bfgs_b minimization
-image, alpha = s_freq.solver_mfreq(model_init, vis_freq, \
-                             noise_freq,nu_arr, nu0, lambda_l1, \
-                             lambda_ltsv, lambda_alpha_ltsv, DX, DY, maxiter = 1000) 
-image_def = image/factor
-
-alpha[image_def==0] = 0
-images_result = data_make.image_alpha_to_images(image_def, alpha, nu_arr, nu0)
-np.savez(os.path.join(FOLDER_sparse, 'mfreq_solution'), image = image_def, alpha = alpha, image_nu = images_result)
-
-images = [images_result[0], images_result[1], image_def, alpha]
-titles = ["Est nu0", "Est nu1", "EstI0", "Estalpha"]
-plot_make.plots_parallel(images, titles , width_im = WIDTH_PLOT, save_folder = save_fig, file_name = "mfreq_image")
+model_init = np.append(image_I0, alpha)
+image, alpha = s_freq.solver_mfreq_several_reg_params(model_init, vis_freq, \
+                             noise_freq,nu_arr, nu0, lambda_l1_pre, \
+                             lambda_tsv_pre, lambda_alpha_pre, DX, DY, maxiter = 50) 
+image_original = image/factor
+alpha[image_original==0] = 0
+#images_result = data_make.image_alpha_to_images(image_original, alpha, nu_arr, nu0)
+np.savez(os.path.join(FOLDER_sparse, "mfreq_solution_regs"), image = image_original, alpha = alpha, \
+	nu_arr = nu_arr, nu0 = nu0)
+#np.savez(os.path.join(FOLDER_sparse, 'mfreq_solution'), image = image_original, alpha = alpha, image_nu = images_result)
+#images = [images_result[0], images_result[1], image_original, alpha]
+#titles = ["Est nu0", "Est nu1", "EstI0", "Estalpha"]
+#plot_make.plots_parallel(images, titles , width_im = WIDTH_PLOT, save_folder = save_fig, file_name = "mfreq_image")
 
 
 

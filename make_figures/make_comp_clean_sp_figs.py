@@ -9,6 +9,14 @@ import pandas as pd
 sys.path.insert(0,'../config')
 
 from setting_freq_common import *
+def radial_flag(rr):
+	x_len, y_len = np.shape(rr)
+	x = np.arange(x_len)
+	y = np.arange(y_len)
+	xx, yy= np.meshgrid(x, y, indexing='ij')
+	dist = ((xx-x_len/2)**2 + (yy-y_len/2)**2 )**0.5
+	return dist
+
 
 
 def plots_comparison(nu0_images, nu1_images, image0s, alphas, width_im = 10, fig_size = (20,20), save_folder = None, file_name = "image"):
@@ -63,6 +71,10 @@ def plots_radial(nu0_images, nu1_images, image0s, alphas, label_names,  fig_size
 
 		fig = plt.figure(figsize=fig_size)
 
+		plt.rcParams['font.size'] = 18
+		plt.tick_params(labelsize=15)
+		plt.xlabel("r (pix)")
+		plt.ylabel("Jy/pix^2")
 		for j in range(len_fig_side):
 			#if j == 1 or j == 3:
 			#	continue
@@ -91,12 +103,61 @@ def plots_radial(nu0_images, nu1_images, image0s, alphas, label_names,  fig_size
 		plt.savefig(os.path.join(save_folder, "%s_%s.png" % (file_name, name_png[i_args_div])),dpi = 100, bbox_inches='tight')
 		plt.close()
 
+def plots_intensity_alpha_comps_color(alphas,  input_alpha, input_model, label_names, save_folder = None, fig_size = (10,10), h_width = 30, file_name = "image"):
+	len_fig_side, x_len, y_len = np.shape(alphas)
+	dist = radial_flag(input_alpha)
+	fig = plt.figure(figsize=fig_size)
+	flag_r_width = dist < h_width
+	input_alpha_r = np.ravel(input_alpha[flag_r_width])
+	input_model_r = np.ravel(input_model[flag_r_width])
+	for i in range(len_fig_side):
+		alpha_now = np.ravel(alphas[i][flag_r_width])
+
+		plt.scatter(input_model_r, alpha_now - input_alpha_r, s = 5, alpha =0.5 , label="%s" % label_names[i])
+	plt.legend()
+	plt.xlim(-0.0003, 0.0015)
+	plt.savefig(os.path.join(save_folder, "%s.png" % (file_name)),dpi = 100, bbox_inches='tight')
+	plt.close()
+
+def plots_intensity_alpha_color(alphas, input_model, label_names, save_folder = None, fig_size = (10,10), h_width = 30, file_name = "image"):
+	len_fig_side, x_len, y_len = np.shape(alphas)
+	dist = radial_flag(input_alpha)
+	fig = plt.figure(figsize=fig_size)
+	flag_r_width = dist < h_width
+	input_model_r = np.ravel(input_model[flag_r_width])
+	for i in range(len_fig_side):
+		alpha_now = np.ravel(alphas[i][flag_r_width])
+		plt.scatter(input_model_r, alpha_now, s = 5, alpha =0.5 , label="%s" % label_names[i])
+	plt.legend()
+	plt.xlim(-0.0003, 0.0015)
+	plt.savefig(os.path.join(save_folder, "%s.png" % (file_name)),dpi = 100, bbox_inches='tight')
+	plt.close()
+
+def plot_alpha_comps(alphas, input_alpha, label_names, save_folder = None, fig_size = (10,10), h_width = 30, file_name = "image"):
+	len_fig_side, x_len, y_len = np.shape(alphas)
+	dist = radial_flag(input_alpha)
+	flag_r_width = dist < h_width	
+	fig = plt.figure(figsize=fig_size)
+	input_alpha_r = np.ravel(input_alpha[flag_r_width])
+	for i in range(len_fig_side):
+		alpha_now = np.ravel(alphas[i][flag_r_width])
+		plt.scatter(input_alpha_r, alpha_now - input_alpha_r, s = 5, alpha =0.5 , label="%s" % label_names[i])
+	plt.legend()
+	alpha_min = np.min(input_alpha)-1
+	alpha_max = np.max(input_alpha)+1
+	#plt.xlim(alpha_min, alpha_max)
+	#plt.ylim(alpha_min, alpha_max)
+	#plt.plot([alpha_min, alpha_max], [alpha_min, alpha_max])
+
+	plt.savefig(os.path.join(save_folder, "%s.png" % (file_name)),dpi = 100, bbox_inches='tight')
+	plt.close()
+
 ## INPUT
 input_models = np.load(os.path.join(FOLDER_pre,"input_model.npz"))
 input_model_nu0 = input_models["model"][0]
 input_model_nu1 = input_models["model"][1]
 input_image0 = input_models["model_nu0"]
-input_alpha= input_models["beta"]
+input_alpha= input_models["alpha"]
 nu_arr = np.array(input_models["nu_arr"])
 nu_0 = float(input_models["nu0"])
 
@@ -143,6 +204,9 @@ names = ["input", "clean", "sp_ind", "sp_full"]
 
 plots_comparison(image_nu0s, image_nu1s, image0_arrs, alpha_arrs, width_im = 128, save_folder = FOLDER_sparse, file_name = "comp_alls")
 plots_radial(image_nu0s, image_nu1s, image0_arrs, alpha_arrs, names, save_folder = FOLDER_sparse, file_name = "comp_alls")
+plots_intensity_alpha_color(alpha_arrs, image_nu0s[0], names, h_width = 30, save_folder = FOLDER_sparse, file_name = "int_color")
 
+plots_intensity_alpha_comps_color(alpha_arrs[1:],alpha_arrs[0], image_nu0s[0], names[1:], h_width = 30, save_folder = FOLDER_sparse, file_name = "int_color_comp")
+plot_alpha_comps(alpha_arrs[1:], alpha_arrs[0], names[1:], h_width = 30, save_folder = FOLDER_sparse, file_name = "alpha_comp")
 
 

@@ -3,15 +3,19 @@ import os
 from scipy.stats import binned_statistic_2d
 import pandas as pd
 
+def freqs_nu_file(file_freq):
+    freqs = np.load(file_freq)
+    return freqs["nu_arr"], freqs["nu0"]
 
-def loader_of_visibility_from_csv(files, file_freq):
+def loader_of_visibility_from_csv(vis_folder, nu_arr):
 
     obs_vis = []
     u_obs = []
     v_obs = []
     vis_obs = []
 
-    for file in files:
+    for nu_now in nu_arr:
+        file = os.path.join(vis_folder, "psim_freq%d.alma.out20.noisy.csv") % int(nu_now)
         df_none = pd.read_csv(file,\
          header=None)
         u = df_none[0]
@@ -21,9 +25,8 @@ def loader_of_visibility_from_csv(files, file_freq):
         u_obs.append(u)
         v_obs.append(v)
         vis_obs.append(real + 1j * imag)
-    freqs = np.load(file_freq)
 
-    return np.array(u_obs), np.array(v_obs), np.array(vis_obs), freqs
+    return np.array(u_obs), np.array(v_obs), np.array(vis_obs)
 
 
 def grided_vis_from_obs(vis_obs, u_obs, v_obs, dx, dy, nfreq, x_len, y_len):

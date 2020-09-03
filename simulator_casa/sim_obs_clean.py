@@ -7,16 +7,14 @@ from setting_freq_common import *
 from setting_freq_image import *
 
 
-def ms_to_visfile(files, out_folder):
+def ms_to_visfile(files, out_folder, nu_arr, nu0 =0):
 	
-	nu_arr = []
 	for (i, file_name) in enumerate(files):
 
 		file_name_freq = file_name + "/SPECTRAL_WINDOW"
 		tb.open(file_name_freq)
 		c_const = 299792458.0 * 1e3/1e9#mm Ghz
 		nu_now = tb.getcol("CHAN_FREQ")[0][0]/1e9
-		nu_arr.append(nu_now)
 		lambda_now = c_const/nu_now
 
 		tb.open(file_name)
@@ -52,7 +50,7 @@ def ms_to_visfile(files, out_folder):
 		tb.close() 
 
 	file_name = os.path.join(out_folder, "vis_file_freqs")
-	np.save(file_name, nu_arr)
+	np.savez(file_name, nu_arr = nu_arr, nu0 = nu0)
 
 	return None
 
@@ -110,8 +108,8 @@ simobserve(project = "psim_freq350", \
 	skymodel = fileimage_freq0, \
 	#setpointings = True, \
 	#direction = "J2000 18h00m00.031s -22d59m59.6s", \
-	#direction = direction_now, \
-	# mapsize =  "20.6arcsec", \
+	direction = direction_now, \
+	mapsize =  "10.0arcsec", \
 	obsmode = "int", \
 	totaltime = "3600s", \
 	incenter="350.0GHz", \
@@ -120,14 +118,15 @@ simobserve(project = "psim_freq350", \
 	#inbright="0.000055", \
 	integration = "60s", \
 	antennalist = "alma.out20.cfg",\
+	pointingspacing    =  "100arcsec", \
 	thermalnoise = noise_mod)
 
 simobserve(project = "psim_freq250", \
 	skymodel = fileimage_freq1, \
 	setpointings = True, \
 	#direction = "J2000 18h00m00.031s -22d59m59.6s", \
-	#direction = direction_now, \
-	#mapsize =  "0.76arcsec", \
+	direction = direction_now, \
+	mapsize =  "10.0arcsec", \
 	obsmode = "int", \
 	totaltime = "3600s", \
 	incenter="250.0GHz", \
@@ -165,4 +164,4 @@ exportfits(imagename="./%s/try.image.tt1" % clean_folder, fitsimage="./%s/try.im
 vis_Files = ["./psim_freq250/psim_freq250.alma.out20.ms", "./psim_freq350/psim_freq350.alma.out20.ms", \
 "./psim_freq250/psim_freq250.alma.out20.noisy.ms", "./psim_freq350/psim_freq350.alma.out20.noisy.ms"]
 
-ms_to_visfile(vis_Files, out_folder)
+ms_to_visfile(vis_Files, out_folder, nu0=300, nu_arr = [350, 250])

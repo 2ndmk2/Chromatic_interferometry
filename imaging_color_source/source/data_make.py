@@ -75,11 +75,11 @@ def gauss_2d(mu, mu2, sigma):
     y = random.gauss(mu2, sigma)
     
     return (x, y)
-def image_beta_to_images(image_nu0,beta, nu_arr, nu0):
+def image_alpha_to_images(image_nu0,alpha, nu_arr, nu0):
     
     images = []
     for nu_dmy in nu_arr:
-        images.append(image_nu0 * (nu_dmy/nu0)**beta)
+        images.append(image_nu0 * (nu_dmy/nu0)**alpha)
     return np.array(images)
 
 ## A
@@ -269,12 +269,12 @@ class observatory:
 
 ## Multi Frequency 
 
-def spectral_power_model(nu_1, nu_0, xx, yy, beta_func = None):
+def spectral_power_model(nu_1, nu_0, xx, yy, alpha_func = None):
 
-    if beta_func is None:
+    if alpha_func is None:
         spectral_indices = (nu_1/nu_0)**(3 * np.ones(np.shape(xx)))
     else:
-        spectral_indices = (nu_1/nu_0)** (beta_func(xx, yy))
+        spectral_indices = (nu_1/nu_0)** (alpha_func(xx, yy))
 
     return spectral_indices 
 
@@ -319,14 +319,14 @@ def rings_gaps_I0_components(x_len, y_len, dx, dy, positions, widths, fractions,
 
     return flux_arrs
 
-def rings_gaps_beta(x_len, y_len, dx, dy, positions, widths, height, gaussian_maj, beta_center=2, beta_outer = 4):
+def rings_gaps_alpha(x_len, y_len, dx, dy, positions, widths, height, gaussian_maj, alpha_center=2, alpha_outer = 4):
 
     xx, yy, uu, vv = coordinate_make(x_len, y_len, dx, dy)
-    major_beta = gaussian_function_2d(xx, yy, gaussian_maj, gaussian_maj, 0, 0)
-    beta_height = beta_outer - beta_center  
-    major_beta_factor = beta_height/np.max(major_beta)
-    major_beta = beta_outer - major_beta * major_beta_factor
-    beta_returns = major_beta 
+    major_alpha = gaussian_function_2d(xx, yy, gaussian_maj, gaussian_maj, 0, 0)
+    alpha_height = alpha_outer - alpha_center  
+    major_alpha_factor = alpha_height/np.max(major_alpha)
+    major_alpha = alpha_outer - major_alpha * major_alpha_factor
+    alpha_returns = major_alpha 
     r = (xx**2 + yy**2) **0.5
 
     for i in range(len(positions)):
@@ -334,14 +334,14 @@ def rings_gaps_beta(x_len, y_len, dx, dy, positions, widths, height, gaussian_ma
         fractional_gaps = gaussian_function_1d(r, widths[i],positions[i])
         fractional_gaps_factor = height[i]/np.max(fractional_gaps)
         fractional_gaps = fractional_gaps*fractional_gaps_factor
-        beta_returns = beta_returns + fractional_gaps
+        alpha_returns = alpha_returns + fractional_gaps
 
     r_arr = np.ravel(r)
-    beta_arr = np.ravel(beta_returns)
-    return beta_returns, r_arr, beta_arr 
+    alpha_arr = np.ravel(alpha_returns)
+    return alpha_returns, r_arr, alpha_arr 
 
 
-def radial_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = [], nu0 = 1.00, spectral_beta_func = None, function = gaussian_function_1d):
+def radial_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = [], nu0 = 1.00, spectral_alpha_func = None, function = gaussian_function_1d):
     
     
     xx, yy, uu, vv = coordinate_make(x_len, y_len, dx, dy)
@@ -352,17 +352,17 @@ def radial_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = []
     images_freqs = []
 
     for nu_dmy in nu_arr:
-        images_freqs.append(image_nu0 * spectral_power_model(nu_dmy, nu0, xx, yy, spectral_beta_func))
+        images_freqs.append(image_nu0 * spectral_power_model(nu_dmy, nu0, xx, yy, spectral_alpha_func))
 
     return images_freqs, image_nu0, xx, yy
 
 
-def multi_spectral_data_make(I0, beta, nu_arr, nu0):
+def multi_spectral_data_make(I0, alpha, nu_arr, nu0):
 
     images_freqs = []
     
     for nu_dmy in nu_arr:
-        images_freqs.append(I0 * (nu_dmy/nu0)** beta )
+        images_freqs.append(I0 * (nu_dmy/nu0)** alpha )
 
     return images_freqs
 
@@ -500,16 +500,16 @@ def TSV(mat):
     #Return all TSV terms
     return sum_tsv
 
-def print_chi_L1_TSV_for_inputmodel(vis_obs, vis_model, noise, image_model, beta_model):
+def print_chi_L1_TSV_for_inputmodel(vis_obs, vis_model, noise, image_model, alpha_model):
     d_vis = (vis_obs - vis_model)/noise
     d_vis[vis_obs==0] = 0
     chi = np.sum(np.abs(d_vis)*np.abs(d_vis))
     l1 = np.sum(image_model)
     TSV_image = TSV(image_model)
-    TSV_beta = TSV(beta_model)
+    TSV_alpha = TSV(alpha_model)
     print("Input model:")
-    print("chi:%e, l1:%e, TSV:%e, TSV_beta:%e" % (chi, l1, TSV_image, TSV_beta))
-    print("if chi=1, l1:%e, TSV:%e, TSV_beta:%e" % (chi/l1, chi/TSV_image, chi/TSV_beta)) 
+    print("chi:%e, l1:%e, TSV:%e, TSV_alpha:%e" % (chi, l1, TSV_image, TSV_alpha))
+    print("if chi=1, l1:%e, TSV:%e, TSV_alpha:%e" % (chi/l1, chi/TSV_image, chi/TSV_alpha)) 
 
 ## No masking fourier trasnform
 def fourier_image(images, dx, dy, lambda_arr, lambda0):

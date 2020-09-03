@@ -18,11 +18,11 @@ input_models = np.load(os.path.join(FOLDER_pre, "input_model.npz"))
 input_model = input_models["model"][0]
 input_model2 = input_models["model"][1]
 model_nu0 = input_models["model_nu0"]
-beta_model = input_models["beta"]
+alpha_model = input_models["alpha"]
 nu_arr = np.array(input_models["nu_arr"])
 nu_0 = float(input_models["nu0"])
 
-images = [input_model, input_model2, model_nu0, beta_model]
+images = [input_model, input_model2, model_nu0, alpha_model]
 outfolder = "plot_images"
 titles = ["image nu[0]","image nu[1]", "input at nu0", "alpha"]
 plot_make.plots_parallel(images,titles, width_im = WIDTH_PLOT,\
