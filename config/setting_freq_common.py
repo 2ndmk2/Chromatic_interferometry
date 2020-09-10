@@ -5,7 +5,7 @@ import numpy as np
 SOURCE_PATH = "/Users/masatakaaizawa/research/current_research/\
 chromatic_imaging/chiim_source/imaging_color_source/"
 ROOT_FOLDER = "/Users/masatakaaizawa/research/current_research/chromatic_imaging/"
-PROJECT_NAME = "project_X3_256_1e-4"
+PROJECT_NAME = "project_256_HD"
 RESULT_FOLDER = os.path.join(ROOT_FOLDER,PROJECT_NAME)
 FOLDER_pre =  RESULT_FOLDER+ "/for_input/"
 FOLDER_sparse = RESULT_FOLDER + "/sparse_result/"

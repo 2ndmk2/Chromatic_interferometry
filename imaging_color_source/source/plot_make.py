@@ -38,7 +38,7 @@ def plots_parallel(args, title, width_im = 10, fig_size = (10,10), save_folder =
         for i in range(len_fig_side):
             show_region = args[i].real
             show_region = show_region[int(x_len/2) - width_im:int(x_len/2) + width_im, int(y_len/2) - width_im:int(y_len/2) + width_im]
-            pcm = axs[i].imshow(args[i].real.T, origin = "lower", vmax = np.max(show_region), vmin = np.min(show_region))
+            pcm = axs[i].imshow(args[i].real, origin = "lower", vmax = np.max(show_region), vmin = np.min(show_region))
             axs[i].set_xlim(int(x_len/2) - width_im,int(x_len/2) + width_im)
             axs[i].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
             axs[i].set_title(title[i])
@@ -53,7 +53,7 @@ def plots_parallel(args, title, width_im = 10, fig_size = (10,10), save_folder =
                     break
                 show_region = args[i].real
                 show_region = show_region[int(x_len/2) - width_im:int(x_len/2) + width_im, int(y_len/2) - width_im:int(y_len/2) + width_im]
-                pcm = axs[i_args_div, i_args_mod].imshow(args[i].real.T, origin = "lower", vmax = np.max(show_region), vmin = np.min(show_region))
+                pcm = axs[i_args_div, i_args_mod].imshow(args[i].real, origin = "lower", vmax = np.max(show_region), vmin = np.min(show_region))
                 axs[i_args_div, i_args_mod].set_xlim(int(x_len/2) - width_im,int(x_len/2) + width_im)
                 axs[i_args_div, i_args_mod].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
                 axs[i_args_div, i_args_mod].set_title(title[i])
@@ -116,7 +116,7 @@ def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None, fil
         i_args_div, i_args_mod = int(i/len_fig_side), i % len_fig_side
         show_region = args[i].real
         show_region = show_region[int(x_len/2) - width_im:int(x_len/2) + width_im, int(y_len/2) - width_im:int(y_len/2) + width_im]
-        axs[i_args_div, i_args_mod].imshow(args[i].real.T, origin = "lower", vmax = np.max(show_region), vmin = np.min(show_region))
+        axs[i_args_div, i_args_mod].imshow(args[i], origin = "lower", vmax = np.max(show_region), vmin = np.min(show_region))
         axs[i_args_div, i_args_mod].set_xlim(int(x_len/2) - width_im,int(x_len/2) + width_im)
         axs[i_args_div, i_args_mod].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
 
@@ -137,7 +137,7 @@ def plots_comp(*args, width_im = 10, fig_size = (10,10), save_folder = None, fil
 
     for (i, dmy) in enumerate(args):
         i_args_div, i_args_mod = int(i/len_fig_side), i % len_fig_side
-        axs[i_args_div, i_args_mod].plot(args[i].real.T.flatten())
+        axs[i_args_div, i_args_mod].plot(args[i].flatten())
         axs[i_args_div, i_args_mod].set_xlim(num_center - width_im, num_center + width_im)
     if save_folder !=None:
         plt.savefig(os.path.join(save_folder, "zoom_view.pdf"), bbox_inches='tight')

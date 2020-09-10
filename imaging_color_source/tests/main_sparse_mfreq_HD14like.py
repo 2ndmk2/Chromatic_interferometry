@@ -16,7 +16,7 @@ sys.path.insert(0,'../../config')
 
 from setting_freq_image import *
 from setting_freq_common import *
-from setting_freq_ring import *
+from setting_freq_HD import *
 
 sys.path.insert(0, os.path.abspath(os.path.join(SOURCE_PATH , 'source')))
 import data_make 
@@ -37,11 +37,12 @@ lambda_arr = LAMBDA_ARR
 lambda0 = LAMBDA0
 
 
-#MAKE IMAGES
-image_origin, r_arr, flux_arr = data_make.rings_gaps_I0(XNUM, YNUM, DX, DY, GAPS_POS,\
-                                                GAPS_WIDTH, GAPS_FRAC , MAJ_RINGS, flux_max = FLUX_MAX_I0)
-alpha_model, r_arr_alpha, alpha_arr = data_make.rings_gaps_alpha(XNUM, YNUM, DX, DY, GAPS_POS , \
-                                                       GAPS_WIDTH, ALPHA_GAPS_HEIGHT ,  MAJ_RINGS)
+
+#Making images
+image_origin, r_arr, flux_arr = data_make.HD14_like_I0(XNUM, YNUM, DX, DY, R_POS,\
+    R_WIDTH, THETA_POS, THETA_WIDTH, flux_max = FLUX_MAX_I0)
+alpha_model, r_arr_alpha, alpha_arr = data_make.HD14_like_alpha(XNUM, YNUM, DX, DY, R_POS_alpha , \
+                                                       R_WIDTH_alpha, THETA_POS_alpha , THETA_WIDTH_alpha)
 xx, yy, uu, vv = data_make.coordinate_make(XNUM, YNUM, DX, DY)
 input_model = data_make.multi_spectral_data_make(image_origin, alpha_model,nu_arr , nu0)
 outfile = os.path.join(FOLDER_pre, "input_model") 
@@ -50,9 +51,10 @@ np.savez(outfile, model = input_model, model_nu0 = image_origin, alpha = alpha_m
 uv_rr = (uu*uu + vv*vv)**0.5
 
 
+outfile = os.path.join(FOLDER_pre, "input_model") 
+np.savez(outfile, model = input_model, model_nu0 = image_origin, alpha = alpha_model, nu_arr = nu_arr, nu0 = nu0 )
 #"""
-## Vertual Obervatory SET UP 
-
+## Vertual Obervatory
 obs_name = os.path.join(FOLDER_pre, "observatory_mfreq")
 obs_file = obs_name + ".pk"
 vis_file = os.path.join(FOLDER_pre, "vis_mfreq.pk")
@@ -110,8 +112,8 @@ if PLOT_INPUT:
     nx, ny = np.shape(image_nu0)
     obs_zero_fft = np.copy(fft_now[0].real)
     obs_zero_fft[num_mat[0]==0] = 0 
-    images = [fft_now[0].real, obs_zero_fft]
-    titles = ["vis model", "vis obs"]
+    images = [fft_now[0].real, fft_now[0].imag]
+    titles = ["real", "imag"]
     plot_make.plots_parallel(images, titles, width_im = 80, \
     	save_folder = save_fig, file_name = "vis_input")
 

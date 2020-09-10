@@ -21,7 +21,7 @@ def loader_of_visibility_from_csv(vis_folder, nu_arr):
         u = df_none[0]
         v = df_none[1]
         real = df_none[6]
-        imag = df_none[7]
+        imag = -df_none[7] ## NOTE THAT CASA gives - imag
         u_obs.append(u)
         v_obs.append(v)
         vis_obs.append(real + 1j * imag)
@@ -49,28 +49,28 @@ def grided_vis_from_obs(vis_obs, u_obs, v_obs, dx, dy, nfreq, x_len, y_len):
     for i_freq in range(nfreq):
 
         ret = binned_statistic_2d(\
-            u_obs[i_freq], v_obs[i_freq], vis_obs[i_freq].real, statistic="mean", \
+            v_obs[i_freq], u_obs[i_freq], vis_obs[i_freq].real, statistic="mean", \
             bins=(for_bins_u, for_bins_v))
         mean_bins_real = ret.statistic
 
         ret = binned_statistic_2d(\
-            u_obs[i_freq], v_obs[i_freq], vis_obs[i_freq].imag, statistic="mean", \
+            v_obs[i_freq], u_obs[i_freq], vis_obs[i_freq].imag, statistic="mean", \
             bins=(for_bins_u, for_bins_v))
         mean_bins_imag = ret.statistic
         mean_bins = mean_bins_real + 1j * mean_bins_imag
 
         ret = binned_statistic_2d(\
-            u_obs[i_freq], v_obs[i_freq], vis_obs[i_freq].real, statistic="std", \
+            v_obs[i_freq], u_obs[i_freq], vis_obs[i_freq].real, statistic="std", \
             bins=(for_bins_u, for_bins_v))
         std_bins_real = ret.statistic
         ret = binned_statistic_2d(\
-            u_obs[i_freq], v_obs[i_freq], vis_obs[i_freq].imag, statistic="std", \
+            v_obs[i_freq],u_obs[i_freq],  vis_obs[i_freq].imag, statistic="std", \
             bins=(for_bins_u, for_bins_v))
         std_bins_imag = ret.statistic
         std_bins = (std_bins_imag ** 2 + std_bins_real**2)**0.5
 
         ret = binned_statistic_2d(\
-            u_obs[i_freq], v_obs[i_freq], vis_obs[i_freq].real, statistic="count", \
+            v_obs[i_freq],u_obs[i_freq],  vis_obs[i_freq].real, statistic="count", \
             bins=(for_bins_u, for_bins_v))
         num_mat = ret.statistic
 

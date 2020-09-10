@@ -1,5 +1,7 @@
-2020-09-03 20:23:08,403|INFO    |numexpr.utils|_init_num_threads|NumExpr defaulting to 8 threads.
-2020-09-03 20:23:39,978|ERROR   |solver_mfreq|fx_L1_mfista|Too large L!! Change l1 or l2 values!!
-2020-09-03 20:23:39,978|INFO    |solver_mfreq|fx_L1_mfista|end fitting: itercount: 170
-2020-09-03 20:24:10,962|ERROR   |solver_mfreq|fx_L1_mfista|Too large L!! Change l1 or l2 values!!
-2020-09-03 20:24:10,962|INFO    |solver_mfreq|fx_L1_mfista|end fitting: itercount: 245
+2020-09-09 17:13:53,631|INFO    |numexpr.utils|_init_num_threads|NumExpr defaulting to 8 threads.
+2020-09-09 17:14:16,429|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:300, relative dif of F: 1.736607e-11
+
+2020-09-09 17:14:16,437|INFO    |solver_mfreq|fx_L1_mfista|chi:1.900602e+02, L1:1.953058e+03, Reg:1.725921e+01 
+2020-09-09 17:14:35,212|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:300, relative dif of F: 1.185315e-11
+
+2020-09-09 17:14:35,219|INFO    |solver_mfreq|fx_L1_mfista|chi:6.913250e+01, L1:8.538889e+02, Reg:4.078601e+00 

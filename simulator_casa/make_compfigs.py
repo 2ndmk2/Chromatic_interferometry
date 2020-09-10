@@ -9,6 +9,7 @@ import pandas as pd
 sys.path.insert(0,'../config')
 from setting_freq_common import *
 
+"""
 ##Data Loading
 df_none = pd.read_csv('./vis_sim/psim_freq350.alma.out20.csv', header=None)
 real_350 = df_none[6]
@@ -54,3 +55,4 @@ plt.xscale("log")
 plt.xlim(2*10**4, 2*10**7)
 plt.savefig("./plot_images/vis_uvdist_comp.jpg",  dpi=300, tight_layout=True)
 plt.close()
+"""

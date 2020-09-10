@@ -49,8 +49,8 @@ noise_freq = noise_freq*factor
 
 ## Makes plots for uv data
 plot_make.plotter_uv_sampling(np.array([u_obs, v_obs]), save_fig, "uv_plot.png")
-vis_for_plots = [vis_freq[0].real, vis_freq[1].real]
-titles = ["Real Vis 350 GHz", "Real Vis 250 GHz"]
+vis_for_plots = [vis_freq[0].real, vis_freq[1].imag]
+titles = ["Real Vis", "Imag Vis"]
 plot_make.plots_parallel(vis_for_plots, titles, width_im = 80, \
 	save_folder = save_fig, file_name = "vis_obs")
 
@@ -68,7 +68,7 @@ model_init[N_tot:2*N_tot] =3
 ## Solver each frequency
 ## Plot solutions
 
-lambda_l1 = 10**(-1.5) 
+lambda_l1 = 10**(-2.0) 
 lambda_ltsv = 10**(-0.5) 
 print(nu_arr)
 
@@ -87,7 +87,7 @@ np.savez(os.path.join(FOLDER_sparse,'mfreq_ind_solution'), image = image_I0_def,
 
 
  ## Solver for chromatic case
-reg_para = np.array([-1.5, 0.0, -0.0])  
+reg_para = np.array([-2.0, -0.5, -2.0])  
 lambda_l1 =  10**(reg_para[0])
 lambda_ltsv =  10**(reg_para[1])
 lambda_alpha_ltsv =  10**(reg_para[2])
@@ -98,7 +98,7 @@ model_init = s_freq.edge_zero(model_init, flag_2d =False)
 
 
 ## set bounds for l_bfgs_b minimization
-bounds = s_freq.set_bounds(N_tot, alpha_max=np.inf , set_alpha_zero_at_edge =False)
+bounds = s_freq.set_bounds(N_tot, alpha_max=6 , set_alpha_zero_at_edge =False)
 
 ## setting for l_bfgs_b minimization
 #alpha = np.ones(np.shape(alpha)) * 3
@@ -109,13 +109,14 @@ clean_file= os.path.join(FOLDER_clean, "clean_result/I0_alpha_clean.npz")
 clean_result = np.load(clean_file)
 
 #model_init = np.append(image_I0, alpha)
-model_init = np.append(clean_result["I0"], clean_result["alpha"])
+init_I0, init_alpha = s_freq.make_init_models(clean_result["I0"], clean_result["alpha"], 0.00002)
+model_init = np.append(init_I0 * factor, init_alpha )
 
 
 ## l_bfgs_b minimization
 image, alpha = s_freq.solver_mfreq(model_init, vis_freq, \
                              noise_freq,nu_arr, nu0, lambda_l1, \
-                             lambda_ltsv, lambda_alpha_ltsv, DX, DY, maxiter = 1000) 
+                             lambda_ltsv, lambda_alpha_ltsv, DX, DY, maxiter = 500) 
 image_def = image/factor
 
 alpha[image_def==0] = 0

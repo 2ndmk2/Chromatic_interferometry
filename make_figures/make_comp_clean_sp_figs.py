@@ -35,7 +35,7 @@ def plots_comparison(nu0_images, nu1_images, image0s, alphas, width_im = 10, fig
 
             show_region = image_for_plots[i_args_div][i_args_mod]
             show_region = show_region[int(x_len/2) - width_im:int(x_len/2) + width_im, int(y_len/2) - width_im:int(y_len/2) + width_im]
-            pcm = axs[i_args_div, i_args_mod].imshow(image_for_plots[i_args_div][i_args_mod].T, origin = "lower", vmax = vmax_input, vmin = vmin_input)
+            pcm = axs[i_args_div, i_args_mod].imshow(image_for_plots[i_args_div][i_args_mod], origin = "lower", vmax = vmax_input, vmin = vmin_input)
             axs[i_args_div, i_args_mod].set_xlim(int(x_len/2) - width_im,int(x_len/2) + width_im)
             axs[i_args_div, i_args_mod].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
             #axs[i_args_div, i_args_mod].set_title(ref_yoko[iargs_mod])
@@ -161,33 +161,16 @@ input_alpha= input_models["alpha"]
 nu_arr = np.array(input_models["nu_arr"])
 nu_0 = float(input_models["nu0"])
 
-## CLEAN
-fileimage_taylor0 = os.path.join(FOLDER_clean, "clean_result/try.image.tt0.fits")
-hdul = fits.open(fileimage_taylor0)
-image_taylor0 = np.array(hdul[0].data[0][0])
-header = hdul[0].header
-Bmaj = header["BMAJ"]
-Bmin = header["BMIN"]
-d_pixel = np.abs(header["CDELT1"])
-beam_div_pixel2 = np.pi * Bmaj * Bmin/(4 * np.log(2) * d_pixel **2)
-image_taylor0 = image_taylor0/beam_div_pixel2
-hdul.close()
 
-fileimage_taylor1 = os.path.join(FOLDER_clean, "clean_result/try.image.tt1.fits")
-hdul = fits.open(fileimage_taylor1)
-image_taylor1 = np.array(hdul[0].data[0][0])
-header2 = hdul[0].header
-image_taylor1 = image_taylor1/beam_div_pixel2
-hdul.close()
+## clean
+clean_file= os.path.join(FOLDER_clean, "clean_result/I0_alpha_clean.npz")
+clean_result = np.load(clean_file)
+clean_model_nu0 = clean_result["image_nu"][0]
+clean_model_nu1 = clean_result["image_nu"][1]
+clean_image0 = clean_result["I0"]
+clean_alpha = clean_result["alpha"]
 
-fileimage_alpha= os.path.join(FOLDER_clean, "clean_result/try.alpha.fits")
-hdul = fits.open(fileimage_alpha)
-clean_alpha = np.array(hdul[0].data[0][0])
-hdul.close()
 
-clean_model_nu0 = image_taylor0 + image_taylor1 * (nu_arr[0] - nu_0)/nu_0
-clean_model_nu1 = image_taylor0 + image_taylor1 * (nu_arr[1] - nu_0)/nu_0
-clean_image0 = image_taylor0
 
 ## mfreq
 image_result_ind = np.load(os.path.join(FOLDER_sparse, "mfreq_ind_solution.npz"))

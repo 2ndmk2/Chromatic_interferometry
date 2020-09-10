@@ -1,3 +1,5 @@
+import numpy as np
+
 ## Image config
 ARCSEC_TO_RAD= 1/206265.0
 #XNUM, YNUM = 64, 64
@@ -7,3 +9,10 @@ XNUM, YNUM = 256, 256
 DX_PIX= 0.01
 DX, DY = DX_PIX*ARCSEC_TO_RAD, DX_PIX*ARCSEC_TO_RAD 
 
+
+## Frequency
+NU0 = 300 #GHz
+NU_OBS = np.array([350,250])
+C_CONST = 299792458.0 * 1e3/1e9#mm Ghz
+LAMBDA_ARR = C_CONST/NU_OBS ##mm
+LAMBDA0 = C_CONST/NU0 ##mm

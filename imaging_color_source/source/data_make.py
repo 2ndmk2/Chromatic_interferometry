@@ -6,6 +6,8 @@ import matplotlib.cm as cm
 import os
 from scipy.stats import binned_statistic_2d
 import pandas as pd
+from scipy.stats import vonmises
+
 
 
 
@@ -37,7 +39,7 @@ def gauss_make(x_len, y_len, x_lim, y_lim, function = gaussian_function_1d, args
     ymin, ymax = y_lim
     x = np.linspace(xmin, xmax, x_len)
     y = np.linspace(ymin, ymax, y_len)
-    xx, yy= np.meshgrid(x, y, indexing='ij')
+    yy, xx= np.meshgrid(y, x, indexing='ij')
     return function(xx, yy, *args), xx, yy
 
 def coordinate_make(x_len, y_len, dx, dy):
@@ -45,7 +47,7 @@ def coordinate_make(x_len, y_len, dx, dy):
     y = np.arange(0,y_len * dy, dy)
     x_shift = x - np.mean(x)
     y_shift = y - np.mean(y)
-    xx, yy= np.meshgrid(x_shift, y_shift, indexing='ij')
+    yy, xx= np.meshgrid(x_shift, y_shift, indexing='ij')
 
     du = 1/(dx * x_len)
     dv = 1/(dy * y_len)
@@ -54,7 +56,7 @@ def coordinate_make(x_len, y_len, dx, dy):
     u_shift = u - np.mean(u)
     v_shift = v - np.mean(v)
 
-    uu, vv= np.meshgrid(u_shift, v_shift, indexing='ij')
+    vv, uu= np.meshgrid(u_shift, v_shift, indexing='ij')
     return xx, yy, uu, vv
     
 def ring_make(x_len, y_len, dx, dy, r_main, width, function = gaussian_function_1d):
@@ -88,7 +90,7 @@ def convert_visdash_to_vis(vis, dx, dy):
     x_len, y_len = np.shape(vis)
     x = np.arange(x_len)
     y = np.arange(y_len)
-    xx, yy = np.meshgrid(x,y)
+    yy, xx = np.meshgrid(x,y)
     phase_factor = np.exp( (float(x_len-1)/float(x_len)) * np.pi*1j* (xx + yy))
     phase_factor2 = np.exp(-np.pi*1j* (float((x_len-1)**2/float(x_len))))
     
@@ -101,7 +103,7 @@ def convert_vis_to_visdash(vis, dx, dy):
     x_len, y_len = np.shape(vis)
     x = np.arange(x_len)
     y = np.arange(y_len)
-    xx, yy = np.meshgrid(x,y)
+    yy, xx = np.meshgrid(x,y)
     phase_factor = np.exp( - (float(x_len-1)/float(x_len)) * np.pi*1j* (xx + yy))
     phase_factor2 = np.exp(np.pi*1j* (float((x_len-1)**2/float(x_len))))
 
@@ -113,7 +115,7 @@ def convert_Idash_to_Idashdash(image):
     x_len, y_len = np.shape(image)
     x = np.arange(x_len)
     y = np.arange(y_len)
-    xx, yy = np.meshgrid(x,y)
+    yy, xx = np.meshgrid(x,y)
     phase_factor = np.exp((float(x_len-1)/float(x_len)) * np.pi*1j* (xx + yy))
 
     return phase_factor 
@@ -124,7 +126,7 @@ def convert_Idashdash_to_Idash(image):
     x_len, y_len = np.shape(image)
     x = np.arange(x_len)
     y = np.arange(y_len)
-    xx, yy = np.meshgrid(x,y)
+    yy, xx = np.meshgrid(x,y)
     phase_factor = np.exp(-(float(x_len-1)/float(x_len)) *np.pi*1j* (xx + yy))
 
     return phase_factor 
@@ -301,7 +303,7 @@ def rings_gaps_I0(x_len, y_len, dx, dy, positions, widths, fractions, gaussian_m
 
 def rings_gaps_I0_components(x_len, y_len, dx, dy, positions, widths, fractions, gaussian_maj):
 
-    xx, yy = coordinate_make(x_len, y_len, dx, dy)
+    yy, xx = coordinate_make(x_len, y_len, dx, dy)
     major_emission = gaussian_function_2d(xx, yy, gaussian_maj, gaussian_maj, 0, 0)
     flux_returns = major_emission
     r = (xx**2 + yy**2) **0.5
@@ -339,6 +341,47 @@ def rings_gaps_alpha(x_len, y_len, dx, dy, positions, widths, height, gaussian_m
     r_arr = np.ravel(r)
     alpha_arr = np.ravel(alpha_returns)
     return alpha_returns, r_arr, alpha_arr 
+
+def HD14_like_I0(x_len, y_len, dx, dy, r_position, r_width, theta_position, theta_width, flux_max=1e-3):
+
+    xx, yy, uu, vv = coordinate_make(x_len, y_len, dx, dy)
+    r = (xx**2 + yy**2) **0.5
+    theta = np.arctan2(yy, xx)
+    I0 = np.ones(np.shape(xx))
+    I0 = I0 * gaussian_function_1d(r, r_width, r_position)
+    I0 = I0 * vonmises.pdf(theta - theta_position, 1/np.sqrt(theta_width))
+    I0 = I0 * flux_max/np.max(I0)
+    r_arr = np.ravel(r)
+    I0_arr = np.ravel(I0)
+    return I0, r_arr, I0_arr
+
+def HD14_like_I0_shifted(x_len, y_len, dx, dy, r_position, r_width, theta_position, theta_width, flux_max=1e-3):
+
+    xx, yy, uu, vv = coordinate_make(x_len, y_len, dx, dy)
+    r = ((xx-0.3/206265.0)**2 + (yy-0.5/206265.0)**2) **0.5
+    theta = np.arctan2(yy, xx)
+    I0 = np.ones(np.shape(xx))
+    I0 = I0 * gaussian_function_1d(r, r_width, r_position)
+    I0 = I0 * vonmises.pdf(theta - theta_position, 1/np.sqrt(theta_width))
+    I0 = I0 * flux_max/np.max(I0)
+    r_arr = np.ravel(r)
+    I0_arr = np.ravel(I0)
+    return I0, r_arr, I0_arr
+
+
+def HD14_like_alpha(x_len, y_len, dx, dy, r_position, r_width, theta_position, theta_width,  alpha_min=2, alpha_max=4):
+    xx, yy, uu, vv = coordinate_make(x_len, y_len, dx, dy)
+    r = (xx**2 + yy**2) **0.5
+    theta = np.arctan2(yy, xx)    
+    alpha = np.ones(np.shape(xx))
+    alpha = alpha * gaussian_function_1d(r, r_width, r_position)
+    alpha = alpha * vonmises.pdf(theta - theta_position, 1/np.sqrt(theta_width))
+    alpha = alpha_min + (alpha_max-alpha_min) * \
+    (alpha - np.min(alpha))/(np.max(alpha))
+
+    r_arr = np.ravel(r)
+    alpha_arr = np.ravel(alpha)
+    return  alpha, r_arr, alpha_arr
 
 
 def radial_make_multi_frequency(x_len, y_len, dx, dy, r_main, width, nu_arr = [], nu0 = 1.00, spectral_alpha_func = None, function = gaussian_function_1d):

@@ -621,7 +621,7 @@ def set_bounds(Nx, alpha_max=4, set_alpha_zero_at_edge = True, flux_max=np.inf):
 
     for i in range(nx):
         for j in range(ny):
-            image_bd.append([-1*10**(-9), + flux_max])
+            image_bd.append([0, + flux_max])
 
             if set_alpha_zero_at_edge and (i==0 or j == 0 or i ==nx-1 or j == ny-1):
                 alpha_bd.append([0,0])
@@ -653,7 +653,7 @@ def edge_zero(image, flag_2d = True):
 def call_back(x_vec):
     global COUNT
     COUNT += 1
-    #print(COUNT)
+    print(COUNT)
     logger.debug(COUNT)
     return None
 
@@ -821,7 +821,7 @@ def solver_mfreq(x_init, obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_alpha
     nx = int(np.sqrt(len(x_init)/2.0))
     alpha_prior = 0 + np.zeros((nx, nx))
     x_init = edge_zero(x_init, flag_2d =False)
-    bounds = set_bounds(int(nx * nx), alpha_max=np.inf , set_alpha_zero_at_edge =False)
+    bounds = set_bounds(int(nx * nx), alpha_max=6, set_alpha_zero_at_edge =False)
     args = (obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_alpha_2, alpha_reg, alpha_prior, dx, dy)
     print(func(x_init, *args))
 
@@ -964,4 +964,8 @@ def determine_regularization_scaling_from_clean(num_mat_freq, clean_image0, clea
     lambda_alpha = n_data/alpha_TSV
     return lambda_l0, lambda_tsv, lambda_alpha, factor
 
-
+def make_init_models(model_I0, model_alpha, min_I0):
+    flag = model_I0 < min_I0 
+    model_I0[flag] = 0
+    model_alpha[flag] = 0
+    return model_I0, model_alpha
