@@ -27,5 +27,5 @@ if [ $FLAG -lt 3 ]; then
 	cd imaging_color_source/tests
 	python main_sparse_data_solve.py
 	cd ../../make_figures
-	python make_comp_clean_sp_figs.py
+	python make_comp_clean_sp_figs_2.py
 fi

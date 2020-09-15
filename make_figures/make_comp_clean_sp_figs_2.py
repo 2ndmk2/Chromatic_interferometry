@@ -17,25 +17,36 @@ def radial_flag(rr):
 	dist = ((xx-x_len/2)**2 + (yy-y_len/2)**2 )**0.5
 	return dist
 
-def plots_comparison_sum(images_for_plot, width_im = 10, fig_size = (20,20), save_folder = None, file_name = "image"):
+def make_titles(nu_arr, nu0):
+	titles = []
+	for nu_dmy in nu_arr:
+		titles.append(str(nu_dmy) +"GHz")
+	titles.append(str(nu0)+"GHz")
+	titles.append("alpha")
+	return titles
 
-    len_fig_tate,len_fig_side, x_len, y_len = np.shape(images_for_plot)
+def plots_comparison_sum(image_for_plots, titles = None, models_titles = None, width_im = 10, fig_size = (20,20), save_folder = None, file_name = "image"):
 
-    fig, axs = plt.subplots(len_fig_tate, len_fig_side, figsize=fig_size )
+    len_fig_side,len_fig_tate, x_len, y_len = np.shape(image_for_plots)
 
-    for i_args_div in range(len_fig_tate):
-        vmin_input = np.min(image_for_plots[i_args_div][0])
-        vmax_input = np.max(image_for_plots[i_args_div][0])
+    fig, axs = plt.subplots(len_fig_side, len_fig_tate, figsize=fig_size)
+    plt.subplots_adjust(wspace=0.4, hspace=0.4)
+    for i_args_mod in range(len_fig_tate):
+        vmin_input = np.min(image_for_plots[0][i_args_mod])
+        vmax_input = np.max(image_for_plots[0][i_args_mod])
+        if i_args_mod == 4:
+        	vmin_input -= 1
+        	vmax_input += 1
 
-        for i_args_mod in range(len_fig_side):
+        for i_args_div in range(len_fig_side):
 
             show_region = image_for_plots[i_args_div][i_args_mod]
             show_region = show_region[int(x_len/2) - width_im:int(x_len/2) + width_im, int(y_len/2) - width_im:int(y_len/2) + width_im]
-            pcm = axs[i_args_div, i_args_mod].imshow(image_for_plots[i_args_div][i_args_mod], origin = "lower", vmax = vmax_input, vmin = vmin_input)
+            pcm = axs[i_args_div][i_args_mod].imshow(image_for_plots[i_args_div][i_args_mod], origin = "lower", vmax = vmax_input, vmin = vmin_input)
             axs[i_args_div, i_args_mod].set_xlim(int(x_len/2) - width_im,int(x_len/2) + width_im)
             axs[i_args_div, i_args_mod].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
-            #axs[i_args_div, i_args_mod].set_title(ref_yoko[iargs_mod])
-            fig.colorbar(pcm, ax=axs[i_args_div, i_args_mod])
+            axs[i_args_div, i_args_mod].set_title(titles[i_args_div] + ":" + models_titles[i_args_mod])
+            fig.colorbar(pcm, ax=axs[i_args_div][i_args_mod])
 
     if save_folder !=None:
         if not os.path.exists(save_folder):
@@ -54,8 +65,8 @@ def plots_comparison(nu0_images, nu1_images, image0s, alphas, width_im = 10, fig
     fig, axs = plt.subplots(len_fig_tate, len_fig_side, figsize=fig_size )
 
     for i_args_div in range(len_fig_tate):
-        vmin_input = np.min(image_for_plots[i_args_div][0])
-        vmax_input = np.max(image_for_plots[i_args_div][0])
+        vmin_input = np.min(image_for_plots[i_args_div][0])-1
+        vmax_input = np.max(image_for_plots[i_args_div][0])+1
 
         for i_args_mod in range(len_fig_side):
 
@@ -203,23 +214,12 @@ image_result_ind = np.load(os.path.join(FOLDER_sparse, "mfreq_ind_solution.npz")
 ind_sum = np.append(image_result_ind["image_nu"], [image_result_ind["image"], image_result_ind["alpha"]], axis = 0)
 image_result_mfreq = np.load(os.path.join(FOLDER_sparse, "mfreq_solution.npz"))
 mfreq_sum = np.append(image_result_mfreq["image_nu"], [image_result_mfreq["image"], image_result_mfreq["alpha"]], axis = 0)
-
 analyze_sum = np.array([input_model_sum, clean_sum, ind_sum, mfreq_sum])
 
-## Integration of images
-image_nu0s = [input_model_nu0, clean_model_nu0, image_result_ind["image_nu"][0], image_result_mfreq["image_nu"][0]]
-image_nu1s = [input_model_nu1, clean_model_nu1, image_result_ind["image_nu"][1], image_result_mfreq["image_nu"][1]]
-image0_arrs = [input_image0, clean_image0,image_result_ind["image"],image_result_mfreq["image"] ]
-alpha_arrs = [input_alpha, clean_alpha, image_result_ind["alpha"],image_result_mfreq["alpha"] ]
 
 ## 
 names = ["input", "clean", "sp_ind", "sp_full"]
+names_data =make_titles(nu_arr, nu_0)
 
-plots_comparison(image_nu0s, image_nu1s, image0_arrs, alpha_arrs, width_im = 128, save_folder = FOLDER_sparse, file_name = "comp_alls")
-plots_radial(image_nu0s, image_nu1s, image0_arrs, alpha_arrs, names, save_folder = FOLDER_sparse, file_name = "comp_alls")
-plots_intensity_alpha_color(alpha_arrs, image_nu0s[0], names, h_width = 30, save_folder = FOLDER_sparse, file_name = "int_color")
-
-plots_intensity_alpha_comps_color(alpha_arrs[1:],alpha_arrs[0], image_nu0s[0], names[1:], h_width = 30, save_folder = FOLDER_sparse, file_name = "int_color_comp")
-plot_alpha_comps(alpha_arrs[1:], alpha_arrs[0], names[1:], h_width = 30, save_folder = FOLDER_sparse, file_name = "alpha_comp")
-
+plots_comparison_sum(analyze_sum,titles = names, models_titles = names_data, width_im = 50, save_folder = FOLDER_sparse, file_name = "comp_alls")
 

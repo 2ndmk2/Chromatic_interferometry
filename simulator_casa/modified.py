@@ -13,8 +13,8 @@ hdulist=pyfits.open('./ppdisk672_GHz_50pc.fits')
 hdu=hdulist[0]
 data=hdu.data
 header = hdu.header
-hdu.header["NAXIS1"] = NX
-hdu.header["NAXIS2"] = NY
+hdu.header["NAXIS1"] = XNUM
+hdu.header["NAXIS2"] = YNUM
 hdu.header["CDELT1"] = DX_PIX/206265.0
 hdu.header["CDELT2"] = DX_PIX/206265.0
 if not os.path.exists("fits_modified"):
@@ -28,7 +28,7 @@ images = input_images["model"]
 for i in range(len(nu_arr)):
 	input_model_now = images[i]
 	NX, NY = np.shape(input_model_now)
-	new_model= flux_factor * np.fliplr(input_model_now)
+	new_model= np.fliplr(input_model_now)
 	new_model = new_model[np.newaxis,np.newaxis,:,:]
 
 	hdu.data= new_model

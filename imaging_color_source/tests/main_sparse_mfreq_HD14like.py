@@ -17,6 +17,7 @@ sys.path.insert(0,'../../config')
 from setting_freq_image import *
 from setting_freq_common import *
 from setting_freq_HD import *
+import utility
 
 sys.path.insert(0, os.path.abspath(os.path.join(SOURCE_PATH , 'source')))
 import data_make 
@@ -97,19 +98,17 @@ model_init[N_tot:2*N_tot] =3
 grad_flag = False
 
 data = np.load(outfile + ".npz")
-image_nu0 = data["model"][0]
-image_nu1 = data["model"][1]
+image_nus = data["model"]
+image_I0 = data["model_nu0"]
+image_alpha = data["alpha"]
+
 
 if PLOT_INPUT:
-    alpha_calc = np.log(image_nu0/image_nu1)/np.log(nu_arr[0]/nu_arr[1])
-    flag = (np.isfinite(alpha_calc) !=True)
-    alpha_calc[flag] = 0
-    images = [image_nu0, image_nu1, image_origin, alpha_model]
-    titles = ["image nu0","image nu1", "input at nu0", "alpha"]
+
+    images = np.append(image_nus,[image_I0, image_alpha],  axis = 0)
+    titles = utility.title_makes(nu_arr, nu0)
     plot_make.plots_parallel(images,titles, width_im = WIDTH_PLOT,\
      save_folder = save_fig, file_name = "input_image")
-
-    nx, ny = np.shape(image_nu0)
     obs_zero_fft = np.copy(fft_now[0].real)
     obs_zero_fft[num_mat[0]==0] = 0 
     images = [fft_now[0].real, fft_now[0].imag]
@@ -122,12 +121,11 @@ if PLOT_INPUT:
 
 
     
-ave_alpha = np.log(np.sum(image_nu0)/np.sum(image_nu1))/np.log(nu_arr[0]/nu_arr[1])
 
 if SOLVE_RUN:
     ## Solver each frequency
     ## Plot solutions
-
+    ave_alpha = np.log(np.sum(image_nu0)/np.sum(image_nu1))/np.log(nu_arr[0]/nu_arr[1])
     lambda_l1 = 10**(1.5)*0.01
     lambda_ltsv = 10**(1.5)*0.01
      

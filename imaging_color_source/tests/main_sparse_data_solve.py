@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 sys.path.insert(0,'../../config')
 from setting_freq_image import *
 from setting_freq_common import *
+import utility 
 
 ## Setting paths to libraries
 sys.path.insert(0, os.path.abspath(os.path.join(SOURCE_PATH , 'source')))
@@ -49,7 +50,7 @@ noise_freq = noise_freq*factor
 
 ## Makes plots for uv data
 plot_make.plotter_uv_sampling(np.array([u_obs, v_obs]), save_fig, "uv_plot.png")
-vis_for_plots = [vis_freq[0].real, vis_freq[1].imag]
+vis_for_plots = [vis_freq[0].real, vis_freq[0].imag]
 titles = ["Real Vis", "Imag Vis"]
 plot_make.plots_parallel(vis_for_plots, titles, width_im = 80, \
 	save_folder = save_fig, file_name = "vis_obs")
@@ -73,21 +74,21 @@ lambda_ltsv = 10**(-0.5)
 print(nu_arr)
 
 image_I0, alpha,  model_freqs = s_freq.solver_mfreq_independent(s_freq.loss_function_arr_TSV, s_freq.grad_loss_tsv, s_freq.zero_func, \
-                                    vis_freq, noise_freq, nu_arr, nu0, lambda_l1,lambda_ltsv, DX, DY, XNUM, YNUM, alpha_def =2.0, \
+                                    vis_freq, noise_freq, nu_arr, nu0, lambda_l1,lambda_ltsv, DX, DY, XNUM, YNUM, alpha_def =3.0, \
                                     positive_solve =True)
 image_I0_def = image_I0/factor
 model_freqs_def = model_freqs/factor
 
 #plot indepenet images 
-images = [model_freqs_def[0], model_freqs_def[1], image_I0_def, alpha]
-titles = ["Estimagenu0 ind", "Estimagenu1 ind", "EstI0 ind", "Estalpha ind"]
+images = np.append(model_freqs_def,[image_I0_def,alpha],  axis = 0)
+titles = utility.title_makes(nu_arr, nu0)
 plot_make.plots_parallel(images,titles, \
 	width_im = WIDTH_PLOT, save_folder = save_fig, file_name = "mfreq_ind_image")
 np.savez(os.path.join(FOLDER_sparse,'mfreq_ind_solution'), image = image_I0_def, alpha = alpha, image_nu = model_freqs_def)
 
 
  ## Solver for chromatic case
-reg_para = np.array([-2.0, -0.5, -2.0])  
+reg_para = np.array([-2.0, 0.5, -1.0])  
 lambda_l1 =  10**(reg_para[0])
 lambda_ltsv =  10**(reg_para[1])
 lambda_alpha_ltsv =  10**(reg_para[2])
@@ -104,7 +105,6 @@ bounds = s_freq.set_bounds(N_tot, alpha_max=6 , set_alpha_zero_at_edge =False)
 #alpha = np.ones(np.shape(alpha)) * 3
 f_cost= s_freq.multi_freq_cost_l1_tsv
 df_cost = s_freq.multi_freq_grad
-
 clean_file= os.path.join(FOLDER_clean, "clean_result/I0_alpha_clean.npz")
 clean_result = np.load(clean_file)
 
@@ -123,8 +123,8 @@ alpha[image_def==0] = 0
 images_result = data_make.image_alpha_to_images(image_def, alpha, nu_arr, nu0)
 np.savez(os.path.join(FOLDER_sparse, 'mfreq_solution'), image = image_def, alpha = alpha, image_nu = images_result)
 
-images = [images_result[0], images_result[1], image_def, alpha]
-titles = ["Est nu0", "Est nu1", "EstI0", "Estalpha"]
+images = np.append(images_result,[image_def, alpha] ,  axis = 0)
+titles = utility.title_makes(nu_arr, nu0)
 plot_make.plots_parallel(images, titles , width_im = WIDTH_PLOT, save_folder = save_fig, file_name = "mfreq_image")
 
 

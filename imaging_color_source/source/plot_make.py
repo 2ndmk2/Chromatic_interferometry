@@ -32,13 +32,15 @@ def plots_parallel(args, title, width_im = 10, fig_size = (10,10), save_folder =
     fig_x, fig_y = fig_size
     fig_size = (fig_x, fig_y * float(len_fig_tate /len_fig_side))
     fig, axs = plt.subplots(len_fig_tate, len_fig_side, figsize=fig_size )
+    plt.subplots_adjust(wspace=0.4, hspace=0.4)
 
     if len_fig_tate == 1:
 
         for i in range(len_fig_side):
             show_region = args[i].real
             show_region = show_region[int(x_len/2) - width_im:int(x_len/2) + width_im, int(y_len/2) - width_im:int(y_len/2) + width_im]
-            pcm = axs[i].imshow(args[i].real, origin = "lower", vmax = np.max(show_region), vmin = np.min(show_region))
+            flag_finite = np.isfinite(show_region)
+            pcm = axs[i].imshow(args[i].real, origin = "lower", vmax = np.max(show_region[flag_finite]), vmin = np.min(show_region[flag_finite]))
             axs[i].set_xlim(int(x_len/2) - width_im,int(x_len/2) + width_im)
             axs[i].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
             axs[i].set_title(title[i])
@@ -53,7 +55,8 @@ def plots_parallel(args, title, width_im = 10, fig_size = (10,10), save_folder =
                     break
                 show_region = args[i].real
                 show_region = show_region[int(x_len/2) - width_im:int(x_len/2) + width_im, int(y_len/2) - width_im:int(y_len/2) + width_im]
-                pcm = axs[i_args_div, i_args_mod].imshow(args[i].real, origin = "lower", vmax = np.max(show_region), vmin = np.min(show_region))
+                flag_finite = np.isfinite(show_region)
+                pcm = axs[i_args_div, i_args_mod].imshow(args[i].real, origin = "lower", vmax = np.max(show_region[flag_finite]), vmin = np.min(show_region[flag_finite]))
                 axs[i_args_div, i_args_mod].set_xlim(int(x_len/2) - width_im,int(x_len/2) + width_im)
                 axs[i_args_div, i_args_mod].set_ylim(int(y_len/2) - width_im,int(y_len/2) + width_im)
                 axs[i_args_div, i_args_mod].set_title(title[i])
