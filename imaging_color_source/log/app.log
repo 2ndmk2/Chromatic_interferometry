@@ -1,10 +1,9 @@
-2020-09-14 16:48:23,201|INFO    |numexpr.utils|_init_num_threads|NumExpr defaulting to 8 threads.
-2020-09-14 16:50:00,795|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:300, relative dif of F: 1.402944e-08
+2021-02-09 10:53:55,917|INFO    |numexpr.utils|_init_num_threads|NumExpr defaulting to 8 threads.
+2021-02-09 10:54:00,133|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:300, relative dif of F: 1.175682e-09
 
-2020-09-14 16:50:00,828|INFO    |solver_mfreq|fx_L1_mfista|chi:1.468597e+02, L1:6.197285e+03, Reg:6.728784e+01 
-2020-09-14 16:51:30,479|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:300, relative dif of F: 4.062403e-10
+2021-02-09 10:54:00,134|INFO    |solver_mfreq|fx_L1_mfista|chi:2.135782e+01, L1:3.734602e+02, Reg:2.404924e+00 
+2021-02-09 10:54:02,671|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:300, relative dif of F: -2.838157e-14
 
-2020-09-14 16:51:30,512|INFO    |solver_mfreq|fx_L1_mfista|chi:1.748364e+02, L1:1.866952e+03, Reg:1.790315e+01 
-2020-09-14 16:52:57,538|INFO    |solver_mfreq|fx_L1_mfista|end; fitting. iternum:300, relative dif of F: 7.219962e-10
-
-2020-09-14 16:52:57,568|INFO    |solver_mfreq|fx_L1_mfista|chi:8.389315e+01, L1:5.267224e+02, Reg:2.257961e+00 
+2021-02-09 10:54:02,672|INFO    |solver_mfreq|fx_L1_mfista|chi:7.020073e+00, L1:1.754468e+02, Reg:7.800841e-01 
+2021-02-09 10:54:05,721|ERROR   |solver_mfreq|fx_L1_mfista|Too large L!! Change l1 or l2 values!!
+2021-02-09 10:54:05,721|INFO    |solver_mfreq|fx_L1_mfista|end fitting: itercount: 236

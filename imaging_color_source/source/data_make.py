@@ -282,7 +282,7 @@ def spectral_power_model(nu_1, nu_0, xx, yy, alpha_func = None):
 
 
 ## Jy/pix
-def rings_gaps_I0(x_len, y_len, dx, dy, positions, widths, fractions, gaussian_maj, flux_max=1e-3):
+def rings_gaps_I0(x_len, y_len, dx, dy, positions, widths, fractions, gaussian_maj, flux_total=1e-3):
 
     xx, yy, uu, vv = coordinate_make(x_len, y_len, dx, dy)
     major_emission = gaussian_function_2d(xx, yy, gaussian_maj, gaussian_maj, 0, 0)
@@ -297,7 +297,7 @@ def rings_gaps_I0(x_len, y_len, dx, dy, positions, widths, fractions, gaussian_m
         flux_returns = flux_returns * fractional_gaps
 
     r_arr = np.ravel(r)
-    flux_returns = flux_max * flux_returns/(np.max(flux_returns))
+    flux_returns = flux_total * flux_returns /np.sum(flux_returns )
     flux_arr = np.ravel(flux_returns)
     return flux_returns, r_arr, flux_arr
 
@@ -342,7 +342,7 @@ def rings_gaps_alpha(x_len, y_len, dx, dy, positions, widths, height, gaussian_m
     alpha_arr = np.ravel(alpha_returns)
     return alpha_returns, r_arr, alpha_arr 
 
-def HD14_like_I0(x_len, y_len, dx, dy, r_position, r_width, theta_position, theta_width, flux_max=1e-3):
+def HD14_like_I0(x_len, y_len, dx, dy, r_position, r_width, theta_position, theta_width, flux_total=1e-3):
 
     xx, yy, uu, vv = coordinate_make(x_len, y_len, dx, dy)
     r = (xx**2 + yy**2) **0.5
@@ -350,12 +350,12 @@ def HD14_like_I0(x_len, y_len, dx, dy, r_position, r_width, theta_position, thet
     I0 = np.ones(np.shape(xx))
     I0 = I0 * gaussian_function_1d(r, r_width, r_position)
     I0 = I0 * vonmises.pdf(theta - theta_position, 1/np.sqrt(theta_width))
-    I0 = I0 * flux_max/np.max(I0)
+    I0 = I0 * flux_total/np.sum(I0)
     r_arr = np.ravel(r)
     I0_arr = np.ravel(I0)
     return I0, r_arr, I0_arr
 
-def HD14_like_I0_shifted(x_len, y_len, dx, dy, r_position, r_width, theta_position, theta_width, flux_max=1e-3):
+def HD14_like_I0_shifted(x_len, y_len, dx, dy, r_position, r_width, theta_position, theta_width, flux_sum=1e-3):
 
     xx, yy, uu, vv = coordinate_make(x_len, y_len, dx, dy)
     r = ((xx-0.3/206265.0)**2 + (yy-0.5/206265.0)**2) **0.5
@@ -363,7 +363,7 @@ def HD14_like_I0_shifted(x_len, y_len, dx, dy, r_position, r_width, theta_positi
     I0 = np.ones(np.shape(xx))
     I0 = I0 * gaussian_function_1d(r, r_width, r_position)
     I0 = I0 * vonmises.pdf(theta - theta_position, 1/np.sqrt(theta_width))
-    I0 = I0 * flux_max/np.max(I0)
+    I0 = I0 * flux_total/np.sum(I0)
     r_arr = np.ravel(r)
     I0_arr = np.ravel(I0)
     return I0, r_arr, I0_arr

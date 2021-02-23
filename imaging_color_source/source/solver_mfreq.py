@@ -6,19 +6,23 @@ import sys
 from scipy import optimize 
 import data_make
 import matplotlib as mpl
+from multiprocessing import Pool
+import parmap
+import time
+import warnings
+
+warnings.simplefilter('ignore')
+
+
 COUNT = 0
-
 logger = logging.getLogger(__name__)
-
-sys.path.insert(0,'../../config')
-from setting_freq_image import *
-from setting_freq_common import *
 
 
 
 
 ## Calculation of TSV
 def TSV(mat):
+    mat = np.array(mat, dtype = np.longdouble)
     sum_tsv = 0
     Nx, Ny = np.shape(mat)
     
@@ -33,8 +37,41 @@ def TSV(mat):
     #Return all TSV terms
     return sum_tsv
 
+def TSV_flagged(mat, mat_flag):
+    sum_tsv = 0
+    Nx, Ny = np.shape(mat)
+
+    # TSV terms from left to right 
+    mat_1 = np.roll(mat, shift = 1, axis = 1) 
+    mat_1_imp = 0.5 * (mat_1[:,1:Ny]-mat[:,1:Ny]) * (mat_1[:,1:Ny]-mat[:,1:Ny]) 
+    mat_1_imp = np.pad(mat_1_imp, [(0,0),(1,0)], mode = 'constant')
+    sum_tsv += np.sum(mat_1_imp[mat_flag])
+
+    # TSV terms from right to left
+    mat_2 = np.roll(mat, shift = -1, axis = 1) 
+    mat_2_imp = 0.5 * (mat_2[:,0:Ny-1]-mat[:,0:Ny-1]) * (mat_2[:,0:Ny-1]-mat[:,0:Ny-1]) 
+    mat_2_imp = np.pad(mat_2_imp, [(0,0),(0,1)], mode = 'constant')
+    sum_tsv += np.sum(mat_2_imp[mat_flag])
+
+    
+    # TSV terms from bottom to top  
+    mat_3 = np.roll(mat, shift = 1, axis = 0) 
+    mat_3_imp = 0.5 * (mat_3[1:Nx, :]-mat[1:Nx, :]) * (mat_3[1:Nx, :]-mat[1:Nx, :]) 
+    mat_3_imp = np.pad(mat_3_imp, [(1,0),(0,0)], mode = 'constant')
+    sum_tsv += np.sum(mat_3_imp[mat_flag])
+
+    # TSV terms from bottom to top  
+    mat_4 = np.roll(mat, shift = -1, axis = 0) 
+    mat_4_imp = 0.5 * (mat_4[0:Nx-1, :]-mat[0:Nx-1, :]) * (mat_4[0:Nx-1, :]-mat[0:Nx-1, :]) 
+    mat_4_imp = np.pad(mat_4_imp, [(0,1),(0,0)], mode = 'constant')
+    sum_tsv += np.sum(mat_4_imp[mat_flag])
+
+    #Return all TSV terms
+    return sum_tsv
+
 ## Calculation of d_TSV
 def d_TSV(mat):
+    mat = np.array(mat, dtype = np.longdouble)
     Nx, Ny = np.shape(mat)
     d_TSV_mat = np.zeros(np.shape(mat))
     mat_1 = np.roll(mat, shift = 1, axis = 1)
@@ -143,6 +180,7 @@ def grad_loss_numerical_l2(model,i,j, *args):
 
 def loss_function_TSV(model, *args):
     (obs, noise, model_prior, lambda_ltsv, dx, dy) = args
+    model = np.array(model, dtype = np.longdouble)
     model_dash = data_make.convert_Idash_to_Idashdash(model) * model
     model_vis = np.fft.fft2(model_dash)
     model_vis = data_make.convert_visdash_to_vis(model_vis, dx, dy) * model_vis
@@ -157,6 +195,7 @@ def loss_function_TSV(model, *args):
 
 def loss_function_arr_TSV(model, *args):
     (obs, noise,  model_prior, lambda_ltsv, dx, dy) = args
+    model = np.array(model, dtype = np.longdouble)
     model_dash = data_make.convert_Idash_to_Idashdash(model) * model
     model_vis = np.fft.fft2(model_dash)
     model_vis = data_make.convert_visdash_to_vis(model_vis,dx, dy) * model_vis
@@ -173,6 +212,7 @@ def grad_loss_tsv(model, *args):
     (obs, noise, model_prior, lambda_ltsv, dx, dy) = args
 
     ## Gradient for L2
+    model = np.array(model, dtype = np.longdouble)
     nx, ny = np.shape(model)
     
     
@@ -198,6 +238,7 @@ def grad_loss_arr_TSV(model, *args):
     (obs, noise,  model_prior, lambda_ltsv, dx, dy) = args
 
     ## Gradient for L2
+    model = np.array(model, dtype = np.longdouble)
     nx, ny = np.shape(model)
     
     ## Gradient for chi^2
@@ -256,7 +297,7 @@ def calc_Q(x, y, f, g, grad_f, L, *args):
 
 ## For proximal mapping
 def soft_threshold(model, lambda_t, print_flag=False):
-
+    model = np.array(model, dtype = np.longdouble)
     mask_temp1 = model> lambda_t
     mask_temp2 = (model> -lambda_t) * (model< lambda_t)
     mask_temp3 = model< - lambda_t
@@ -269,7 +310,7 @@ def soft_threshold(model, lambda_t, print_flag=False):
 
 ## For proximal mapping under positive condition
 def positive_soft_threshold(model, lambda_t, print_flag=False):
-
+    model = np.array(model, dtype = np.longdouble)
     mask_temp1 = model> lambda_t
     mask_temp2 = model< lambda_t
     model[mask_temp1] -= lambda_t
@@ -280,9 +321,10 @@ def positive_soft_threshold(model, lambda_t, print_flag=False):
 
 
 def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_init = 1, iter_max = 1000, iter_min =300, \
- mask_positive = True,  stop_ratio = 1e-10, restart = True, *args):
+ mask_positive = True,  stop_ratio = 1e-10, restart = True, plot_solve_curve = False, max_l = 1e15, eta_min = 1.05,*args):
 
     (obs, noise, lambda_l1, lambda_l2, dx, dy) = args
+    init_model = np.array(init_model, dtype = np.longdouble)
     tk = 1
     x_k=init_model
     y_k = init_model
@@ -294,7 +336,7 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
     ## Loop for mfista
     itercount = 0
     F_xk_arr = []
-    if PLOT_SOLVE_CURVE:
+    if plot_solve_curve:
         fig, ax = plt.subplots()
     while(1):
         
@@ -305,8 +347,8 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
 
         while(1):
 
-            if L > MAX_L:
-                if ETA_MIN < eta:
+            if L > max_l:
+                if eta_min < eta:
                     L = L_init
                     eta = eta**0.5
                     iterncount = 0
@@ -318,7 +360,7 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
                 else:
                     logger.error("Too large L!! Change l1 or l2 values!!")
                     logger.info("end fitting: itercount: %d" % itercount)
-                    return y_k, SOLVED_FLAG_ER 
+                    return y_k, "SOLVE ERROR"
                 #raise ValueError("fitting error!")
             if mask_positive:
                 z_temp = positive_soft_threshold(y_k -(1/L) *f_grad_yk,lambda_l1 *(1/L)) 
@@ -342,9 +384,9 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
             relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
 
             if relative_dif < stop_ratio:
-                if PLOT_SOLVE_CURVE:
+                if plot_solve_curve:
                     plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-                    plt.savefig(FIG_FOLDER + "fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
+                    plt.savefig("./fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
                     plt.close()
                 break
 
@@ -366,28 +408,28 @@ def fx_L1_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_
 
             chi, l2 =loss_f_arr(x_k, *args)
             logger.debug("iternum:%d, L: %e, F_xk: %e, chi:%e, reg: %e, rela_err:%e"  % (itercount, L, np.log10(F_xk), chi, l2, np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])))
-            if PLOT_SOLVE_CURVE:
+            if plot_solve_curve:
                 line, = ax.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
                 plt.pause(0.01)
                 line.remove()
 
 
         if itercount > iter_max:
-            if PLOT_SOLVE_CURVE:
+            if plot_solve_curve:
                 plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-                plt.savefig(FIG_FOLDER + "fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
+                plt.savefig("./fitting_curve_l1+%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
                 plt.close()
             break
     relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
     logger.info("end; fitting. iternum:%d, relative dif of F: %e\n" % (itercount, relative_dif))
     chi, l2 =loss_f_arr(y_k, *args)
     logger.info("chi:%e, L1:%e, Reg:%e " % (chi,np.sum(y_k), l2))
-    return y_k, SOLVED_FLAG_DONE
+    return y_k, "SOlVED"
 
 
 
 def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, L_init = 1, iter_max = 1000, \
-    iter_min = 300, mask_positive = True, stop_ratio = 1e-10, restart = True,  *args):
+    iter_min = 300, mask_positive = True, stop_ratio = 1e-10, restart = True, max_l =1e15, eta_min = 1.05,  *args):
 
     (obs, noise, model_prior, lambda_l2, dx, dy) = args
     tk = 1
@@ -414,8 +456,8 @@ def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, 
         while(1):
             logger.debug("itercount: %d, L: %e, eta:%e, tk%f" % (itercount, L, eta, tk))
 
-            if L > MAX_L:
-                if ETA_MIN < eta:
+            if L > max_l:
+                if eta_min < eta:
                     L = L_init
                     eta = eta**0.5
                     iterncount = 0
@@ -424,7 +466,7 @@ def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, 
                 else:
                     logger.error("Too large L!! Make l1 or l2 regularization parameters small!!")
                     logger.info("end fitting: itercount: %d" % itercount)
-                    return y_k, SOLVED_FLAG_ER 
+                    return y_k, "SOLVE ERROR" 
 
 
             z_temp = y_k -(1/L) *f_grad_yk
@@ -452,7 +494,7 @@ def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, 
 
             if relative_dif < stop_ratio:
                 plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-                plt.savefig(FIG_FOLDER + "fitting_curve_%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
+                plt.savefig("./fitting_curve_%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
                 plt.close()
                 break
 
@@ -478,16 +520,18 @@ def only_fx_mfista(init_model, loss_f_arr, grad_f, loss_g = zero_func, eta=1.1, 
             line.remove()
         if itercount > iter_max:
             plt.plot(range(len(F_xk_arr)), F_xk_arr, color='blue')
-            plt.savefig(FIG_FOLDER + "fitting_curve_%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
+            plt.savefig("./fitting_curve_%s.pdf" % (loss_f_arr.__name__), bbox_inches='tight')
             plt.close()
             break
     relative_dif =np.abs(np.log10(F_xk_arr[len(F_xk_arr)-2]) - np.log10(F_xk_arr[len(F_xk_arr)-1]))/np.log10(F_xk_arr[len(F_xk_arr)-1])
     logger.info("end; fitting. iternum:%d, relative dif of F: %e" % (itercount, relative_dif))
 
 
-    return y_k, SOLVED_FLAG_DONE
+    return y_k, "SOlVED"
+## Block Coordinate descent 
 
 ## Optimizers
+
 
 def adam(init_model, loss_f, grad_f, alpha = 0.001, alpha_1 = 0.9, alpha_2 = 0.999, epsilon = 1e-10, iter_max = 1000, *args):
 
@@ -653,7 +697,7 @@ def edge_zero(image, flag_2d = True):
 def call_back(x_vec):
     global COUNT
     COUNT += 1
-    print(COUNT)
+    #print(COUNT)
     logger.debug(COUNT)
     return None
 
@@ -770,10 +814,7 @@ def multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0, dx, dy):
 
     return chi_sum
 
-
 def multi_freq_cost_l1_tsv(x_vec, *args):
-
-    #x_vec = alpha_to_zero_w_I(x_vec)
     obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_alpha_2, alpha_reg, alpha_prior, dx, dy  = args 
     model_image, model_alpha = x_to_I_alpha(x_vec)
     chi2 = multi_freq_chi2(x_vec, obs, noise, nu_arr, nu0, dx, dy)
@@ -792,8 +833,6 @@ def multi_freq_cost_l1_tsv(x_vec, *args):
     logger.debug("mfreq solving: chi2:%e, l1:%e, TSV:%e, alpha:%e, sum:%e" % \
         (chi2,  L1_norm(model_image), TSV(model_image), alpha_cost, cost_sum))
     return cost_sum
-
-
 
 def grad_mfreq_numerical(x_vec,  *args):
 
@@ -819,16 +858,19 @@ def solver_mfreq(x_init, obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_alpha
     f_grad= multi_freq_grad, alpha_reg="TSV", maxiter = 15000, factr = 10000000.0, call_back = call_back):
 
     nx = int(np.sqrt(len(x_init)/2.0))
-    alpha_prior = 0 + np.zeros((nx, nx))
+    alpha_prior = 0 + np.zeros((nx, nx)) ## no meaning if TSV for alpha
     x_init = edge_zero(x_init, flag_2d =False)
     bounds = set_bounds(int(nx * nx), alpha_max=6, set_alpha_zero_at_edge =False)
     args = (obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_alpha_2, alpha_reg, alpha_prior, dx, dy)
-    print(func(x_init, *args))
 
     result = optimize.fmin_l_bfgs_b(func, x_init, args = args, fprime = f_grad, \
             bounds = bounds, maxiter = maxiter, factr = factr, callback = call_back)
 
     image, alpha = x_to_I_alpha(result[0])
+    print()
+    print("fittting w/")
+    print("l1%f. l2%f. lalpha%f" % ( np.log10(lambda1), np.log10(lambda2), np.log10(lambda_alpha_2)))
+    print("result statistics")
     print("chi:%e,L1:%e, TSV:%e, TSV(alpha):%e" %(multi_freq_chi2(result[0], obs, noise, nu_arr, nu0, dx, dy), \
         np.sum(image), TSV(image), TSV(alpha)))
     return image, alpha
@@ -846,58 +888,63 @@ def lambda_arrs_make(lambda1, lambda2, lambda_alpha_2, nterms=3, spacing = 1):
 
     return lambda1_arr, lambda2_arr,lambda_alpha_2_arr
 
-def solver_mfreq_for_loop(x_init, obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_alpha_2, dx,dy, f = multi_freq_cost_l1_tsv, \
+def solver_mfreq_for_loop(lambda1, lambda2, lambda_alpha_2, x_init, obs, noise, nu_arr, nu0, dx,dy, f = multi_freq_cost_l1_tsv, \
     f_grad= multi_freq_grad, alpha_reg="TSV", maxiter = 15000, factr = 10000000.0, call_back = call_back):
-
-    alpha_prior = 0 + np.zeros(np.shape(alpha))
-    x_init = edge_zero(x_init, flag_2d =False)
-    bounds = set_bounds(N_tot, alpha_max=np.inf , set_alpha_zero_at_edge =False)
-    args = (obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_alpha_2, alpha_reg, alpha_prior, dx, dy)
-    
-
-    result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = f_grad, \
-            bounds = bounds, maxiter = maxiter, factr = factr, callback = call_back)
-
-    image, alpha = x_to_I_alpha(result[0])
-    print("chi:%e,L1:%e, TSV:%e, TSV(alpha):%e" %(multi_freq_chi2(result[0], obs, noise, nu_arr, nu0, dx, dy), \
-        np.sum(image), TSV(image), TSV(alpha)))
-    return image, alpha
-def solver_mfreq_for_wrapper(args):
-    return solver_mfreq_for_loop(*args)
-
-def solver_mfreq_several_reg_params(x_init, obs, noise, nu_arr, nu0, lambda1_pre, lambda2_pre, lambda_alpha_2_pre, dx,dy, f = multi_freq_cost_l1_tsv, \
-    f_grad= multi_freq_grad, alpha_reg="TSV", maxiter = 15000, factr = 10000000.0, call_back = call_back):
-    
-    lambda1_arr, lambda2_arr,lambda_alpha_2_arr = lambda_arrs_make(lambda1_pre, lambda2_pre, lambda_alpha_2_pre, nterms=3)
     nx = int(np.sqrt(len(x_init)/2.0))
 
-    image_I_arrs = np.zeros((len(lambda1_arr), len(lambda2_arr), len(lambda_alpha_2_arr), nx ,nx))
-    image_alpha_arrs = np.zeros((len(lambda1_arr), len(lambda2_arr), len(lambda_alpha_2_arr), nx ,nx))
-    print(lambda1_arr, lambda2_arr,lambda_alpha_2_arr)
-    p = Pool(processes=2)
+    alpha_prior = 0 + np.zeros((nx, nx)) ## no meaning if TSV for alpha
+    x_init = edge_zero(x_init, flag_2d =False)
+    bounds = set_bounds(int(nx * nx), alpha_max=6 , set_alpha_zero_at_edge =True)
+    args = (obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_alpha_2, alpha_reg, alpha_prior, dx, dy)
+    
+    start = time.time()
+    result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = f_grad, \
+            bounds = bounds, maxiter = maxiter, factr = factr, callback = call_back)
+    time_consumed = time.time() - start
+    image, alpha = x_to_I_alpha(result[0])
+    print()
+    print("fittting w/")
+    print("time:", time_consumed)
+    print("Parameters: l1%f. l2%f. lalpha%f" % ( np.log10(lambda1), np.log10(lambda2), np.log10(lambda_alpha_2)))
+    print("result statistics: chi%e,L 1%e, TSV%e, TSV(alpha):%e" %(multi_freq_chi2(result[0], obs, noise, nu_arr, nu0, dx, dy), \
+        np.sum(image), TSV(image), TSV(alpha)))
+    return image, alpha
 
-    for (i, lambda1) in enumerate(lambda1_arr):
-        for (j, lambda2) in enumerate(lambda2_arr):
-            for (k, lambda_alpha_2) in enumerate(lambda_alpha_2_arr):
-                print(i,j,k)
-                #solver_mfreq_for_loop
-                #p.map(wrapper_kakezan, tutumimono) 
-                """
-                alpha_prior = 0 + np.zeros((nx, nx))
-                x_init = edge_zero(x_init, flag_2d =False)
-                bounds = set_bounds(int(nx * nx), alpha_max=np.inf , set_alpha_zero_at_edge =False)
-                args = (obs, noise, nu_arr, nu0, lambda1, lambda2, lambda_alpha_2, alpha_reg, alpha_prior, dx, dy)
-                result = optimize.fmin_l_bfgs_b(f, x_init, args = args, fprime = f_grad, \
-                bounds = bounds, maxiter = maxiter, factr = factr, callback = call_back)
-                image, alpha = x_to_I_alpha(result[0])
-                """
-                image_I_arrs[i,j,k] = image
-                image_alpha_arrs[i,j,k] = alpha
+def make_list_combinations(arr1, arr2, arr3):
 
-    return image_I_arrs, image_alpha_arrs 
+	arr1_arr = []
+	arr2_arr = []
+	arr3_arr = []
+
+	for i in arr1:
+		for j in arr2:
+			for k in arr3:
+				arr1_arr.append(i)
+				arr2_arr.append(j)
+				arr3_arr.append(k)
+
+	return np.array(arr1_arr), np.array(arr2_arr), np.array(arr3_arr)
+
+def solver_mfreq_several_reg_params(x_init, obs, noise, nu_arr, nu0, log10_lam_l1_arr, log10_lam_ltsv_arr, log10_lam_alpha_arr, dx,dy, f = multi_freq_cost_l1_tsv, \
+    f_grad= multi_freq_grad, alpha_reg="TSV", maxiter = 15000, factr = 10000000.0, call_back = call_back):
+    
+    #lambda1_arr, lambda2_arr,lambda_alpha_2_arr = lambda_arrs_make(lambda1_pre, lambda2_pre, lambda_alpha_2_pre, nterms=3)
+    nx = int(np.sqrt(len(x_init)/2.0))
+
+    image_I_arrs = np.zeros((len(log10_lam_l1_arr), len(log10_lam_ltsv_arr), len(log10_lam_alpha_arr), nx ,nx))
+    image_alpha_arrs = np.zeros((len(log10_lam_l1_arr), len(log10_lam_ltsv_arr), len(log10_lam_alpha_arr), nx ,nx))
+    print(log10_lam_l1_arr, log10_lam_ltsv_arr, log10_lam_alpha_arr)
+    log_10_lam_l1_all, log10_lam_ltsv_all,log10_lam_alpha_all =  make_list_combinations(log10_lam_l1_arr, log10_lam_ltsv_arr, log10_lam_alpha_arr)
+    listz = parmap.starmap(solver_mfreq_for_loop, zip(10**log_10_lam_l1_all, 10**log10_lam_ltsv_all, 10**log10_lam_alpha_all ), \
+    	x_init, obs, noise, nu_arr, nu0, dx,dy)
+
+    return log_10_lam_l1_all, log10_lam_ltsv_all,log10_lam_alpha_all, listz
 
 
-def solver_mfreq_independent(loss, grad, l1_func, vis_obs,  noise, nu_arr, n0, l1_lambda, l2_lambda, dx, dy, xnum, ynum, alpha_def = None, positive_solve =True, percentile = 10):
+def solver_mfreq_independent(loss, grad, l1_func, vis_obs,  noise, nu_arr, n0, l1_lambda, l2_lambda, dx, dy, \
+    xnum, ynum, alpha_def = None, positive_solve =True, percentile = 10,\
+    eta_init =1.1, l_init = 1e-3, maxite = 500, minite = 300, stop_ratio = 1e-7, \
+    restart = True,  plot_solve_curve=False, max_l = 1e15, eta_min = 1.05):
 
     nfreq, nx, ny = np.shape(vis_obs)
     model_freqs = np.zeros((nfreq, xnum, ynum))
@@ -905,8 +952,8 @@ def solver_mfreq_independent(loss, grad, l1_func, vis_obs,  noise, nu_arr, n0, l
     for i in range(nfreq):
         init_model = np.zeros((xnum, ynum))
         image, solved = fx_L1_mfista(init_model, loss, 
-            grad, l1_func, ETA_INIT, L_INIT, MAXITE, MINITE, positive_solve ,\
-            STOP_RATIO,RESTART, vis_obs[i], noise[i], l1_lambda, l2_lambda, dx, dy)
+            grad, l1_func, eta_init, l_init, maxite, minite, positive_solve ,\
+            stop_ratio,restart, plot_solve_curve, max_l, eta_min,  vis_obs[i], noise[i], l1_lambda, l2_lambda, dx, dy)
 
         model_freqs[i] = image
 
@@ -958,14 +1005,21 @@ def determine_regularization_scaling_from_clean(num_mat_freq, clean_image0, clea
     clean_image0_normlized = clean_image0 * factor
     l1_norm = L1_norm(clean_image0_normlized)
     TSV_term = TSV(clean_image0_normlized)
-    alpha_TSV = TSV(clean_alpha)
+    clean_alpha_mod = np.copy(clean_alpha)
+    flag_nonnan = (False == np.isfinite(clean_alpha))
+    clean_alpha_mod[flag_nonnan] = 0
+    alpha_TSV = TSV(clean_alpha_mod)
     lambda_l0 = n_data/l1_norm
     lambda_tsv = n_data/TSV_term
     lambda_alpha = n_data/alpha_TSV
+
     return lambda_l0, lambda_tsv, lambda_alpha, factor
 
-def make_init_models(model_I0, model_alpha, min_I0):
+def make_init_models(model_I0, model_alpha, min_I0=1e-8):
     flag = model_I0 < min_I0 
     model_I0[flag] = 0
     model_alpha[flag] = 0
-    return model_I0, model_alpha
+    model_alpha_mod = np.copy(model_alpha)
+    flag_nonnan = (False == np.isfinite(model_alpha))
+    model_alpha_mod[flag_nonnan] = 0
+    return model_I0, model_alpha_mod

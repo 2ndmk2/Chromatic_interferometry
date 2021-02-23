@@ -2,7 +2,7 @@ from logging import basicConfig, getLogger, StreamHandler, FileHandler, Formatte
 import datetime
 
 now = datetime.datetime.now()
-log_file = "../log/" + now.strftime('%Y%m%d_%H%M%S')  + ".log"
+log_file = "./log/" + now.strftime('%Y%m%d_%H%M%S')  + ".log"
 
 f_fmt='%(asctime)s - %(levelname)s - %(funcName)s- %(message)s'
 

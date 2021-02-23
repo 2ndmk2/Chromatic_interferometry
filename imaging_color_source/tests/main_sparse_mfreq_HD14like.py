@@ -41,7 +41,7 @@ lambda0 = LAMBDA0
 
 #Making images
 image_origin, r_arr, flux_arr = data_make.HD14_like_I0(XNUM, YNUM, DX, DY, R_POS,\
-    R_WIDTH, THETA_POS, THETA_WIDTH, flux_max = FLUX_MAX_I0)
+    R_WIDTH, THETA_POS, THETA_WIDTH, flux_total = FLUX_TOT_I0)
 alpha_model, r_arr_alpha, alpha_arr = data_make.HD14_like_alpha(XNUM, YNUM, DX, DY, R_POS_alpha , \
                                                        R_WIDTH_alpha, THETA_POS_alpha , THETA_WIDTH_alpha)
 xx, yy, uu, vv = data_make.coordinate_make(XNUM, YNUM, DX, DY)
@@ -116,7 +116,6 @@ if PLOT_INPUT:
     plot_make.plots_parallel(images, titles, width_im = 80, \
     	save_folder = save_fig, file_name = "vis_input")
 
-
     plot_make.plots_vis_radial(vis_obs, fft_now, uv_rr, save_fig)
 
 
@@ -131,7 +130,9 @@ if SOLVE_RUN:
      
 
     image_I0, alpha,  model_freqs = s_freq.solver_mfreq_independent(s_freq.loss_function_arr_TSV, s_freq.grad_loss_tsv, s_freq.zero_func, \
-                                        vis_obs, noise, nu_arr, nu0, lambda_l1,lambda_ltsv, DX, DY, XNUM, YNUM, alpha_def =2.5)
+                                        vis_obs, noise, nu_arr, nu0, lambda_l1,lambda_ltsv, DX, DY, XNUM, YNUM, alpha_def =2.5,\
+                                        eta_init =ETA_INIT, l_init = L_INIT, maxite = MAXITE, minite = MINITE, stop_ratio = STOP_RATIO, \
+                                        restart = RESTART, plot_solve_curve=PLOT_SOLVE_CURVE, max_l = MAX_L, eta_min = ETA_MIN)
 
     #plot indepenet images 
 
@@ -140,10 +141,6 @@ if SOLVE_RUN:
     plot_make.plots_parallel(images,titles, \
     	width_im = WIDTH_PLOT, save_folder = save_fig, file_name = "mfreq_ind_image")
 
-
-    ## Grad Check for monochromatic case
-
-    ## Grad Check for chromatic case
 
 
      ## Solver for chromatic case
@@ -160,7 +157,6 @@ if SOLVE_RUN:
 
 
     ## set bounds for l_bfgs_b minimization
-
     bounds = s_freq.set_bounds(N_tot, alpha_max=9, set_alpha_zero_at_edge =False)
 
     ## setting for l_bfgs_b minimization
@@ -185,7 +181,7 @@ if SOLVE_RUN:
     ## l_bfgs_b minimization
     result = s_freq.solver_mfreq(model_init, vis_obs, \
                                  noise ,nu_arr, nu0, lambda_l1, \
-                                 lambda_ltsv, lambda_alpha_ltsv,alpha_reg, alpha_prior, DX, DY, maxiter = 200) 
+                                 lambda_ltsv, lambda_alpha_ltsv, alpha_reg, alpha_prior, DX, DY, maxiter = 200) 
     image_result, alpha_result = s_freq.x_to_I_alpha(result[0])
     np.savez('test', image = image_result, alpha = alpha_result)
 

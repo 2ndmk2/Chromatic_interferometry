@@ -39,7 +39,7 @@ lambda0 = LAMBDA0
 
 #MAKE IMAGES
 image_origin, r_arr, flux_arr = data_make.rings_gaps_I0(XNUM, YNUM, DX, DY, GAPS_POS,\
-                                                GAPS_WIDTH, GAPS_FRAC , MAJ_RINGS, flux_max = FLUX_MAX_I0)
+                                                GAPS_WIDTH, GAPS_FRAC , MAJ_RINGS, flux_total = FLUX_TOT_I0)
 alpha_model, r_arr_alpha, alpha_arr = data_make.rings_gaps_alpha(XNUM, YNUM, DX, DY, GAPS_POS , \
                                                        GAPS_WIDTH, ALPHA_GAPS_HEIGHT ,  MAJ_RINGS)
 xx, yy, uu, vv = data_make.coordinate_make(XNUM, YNUM, DX, DY)

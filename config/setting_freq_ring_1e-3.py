@@ -16,7 +16,7 @@ SOLVE_RUN = False
 ## Rings & Gaps parameters
 ARCSEC_TO_RAD= 1/206265.0
 FACTOR = 1
-FLUX_MAX_I0 = 1e-4
+FLUX_TOT_I0 = 0.05
 GAPS_POS = np.array([0.09, 0.17]) * 1.5*ARCSEC_TO_RAD  * FACTOR
 GAPS_WIDTH = np.array([0.015, 0.015]) * 2.0*ARCSEC_TO_RAD* FACTOR
 GAPS_FRAC = [0.7,0.7]

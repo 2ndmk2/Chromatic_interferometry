@@ -19,10 +19,6 @@ nu0 = NU0
 
 
 utility.clean_to_images_and_save(clean_folder, clean_name, len(nu_arr), nu_arr, nu0)
-
-
-sys.path.insert(0, os.path.abspath(os.path.join(SOURCE_PATH , 'source')))
-sys.path.insert(0, os.path.abspath(os.path.join(SOURCE_PATH , 'config')))
 import plot_make
 
 input_models, model_nu0,alpha_model,nu_arr ,nu_0 = utility.load_image_npfile(FOLDER_pre)
